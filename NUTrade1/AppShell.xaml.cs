@@ -8,15 +8,18 @@ public partial class AppShell : Shell
 {
     private readonly IAuthService _auth;
     private readonly IUserService _users;
+    private readonly IPushTokenProvider _push;
     private readonly WinWatcher _wins;
     private bool _gateApplied;
+    private bool _pushAttempted;
 
-    public AppShell(IAuthService auth, IUserService users, WinWatcher wins)
+    public AppShell(IAuthService auth, IUserService users, IPushTokenProvider push, WinWatcher wins)
     {
         InitializeComponent();
 
         _auth = auth;
         _users = users;
+        _push = push;
         _wins = wins;
 
         RegisterDetailRoutes();
@@ -74,6 +77,7 @@ public partial class AppShell : Shell
         {
             // Signed out: stop watching for wins and drop anything meant for the last account.
             _wins.Stop();
+            _pushAttempted = false;
             NotificationCenter.Current.Clear();
             Toaster.Current.Clear();
             if (IsAt(location, SignedOutRoutes)) return;
@@ -95,6 +99,7 @@ public partial class AppShell : Shell
         {
             // In the app proper: announce won auctions (Bid Approved / You Have a Winner).
             _wins.Start();
+            await TryRegisterPushTokenAsync();
 
             // Already past the gate — leave them on whichever tab or page they opened.
             var onGateScreen = location.Length == 0
@@ -105,6 +110,26 @@ public partial class AppShell : Shell
         }
 
         await GoToAsync(target);
+    }
+
+    /// <summary>
+    /// Writes this device's FCM token onto the signed-in profile when one exists.
+    /// No token is invented: the provider returns null until messaging is configured,
+    /// and that is stored as a no-op rather than a placeholder.
+    /// </summary>
+    private async Task TryRegisterPushTokenAsync()
+    {
+        if (_pushAttempted) return;
+        _pushAttempted = true;
+        try
+        {
+            var token = await _push.GetTokenAsync();
+            await _users.RegisterPushTokenAsync(token);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _pushAttempted = false;
+        }
     }
 
     private static bool IsAt(string location, params string[] routes) =>

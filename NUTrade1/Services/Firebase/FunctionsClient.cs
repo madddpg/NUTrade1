@@ -18,11 +18,13 @@ public sealed class FunctionsClient
 {
     private readonly HttpClient _http;
     private readonly IFirebaseTokenProvider _tokens;
+    private readonly ApiRateLimiter _limiter;
 
-    public FunctionsClient(HttpClient http, IFirebaseTokenProvider tokens)
+    public FunctionsClient(HttpClient http, IFirebaseTokenProvider tokens, ApiRateLimiter limiter)
     {
         _http = http;
         _tokens = tokens;
+        _limiter = limiter;
     }
 
     /// <summary>
@@ -54,6 +56,7 @@ public sealed class FunctionsClient
 
         try
         {
+            await _limiter.AcquireAsync(ct);
             using var response = await _http.SendAsync(request, ct);
             var raw = await response.Content.ReadAsStringAsync(ct);
 

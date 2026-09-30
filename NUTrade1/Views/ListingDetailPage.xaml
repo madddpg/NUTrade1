@@ -103,12 +103,14 @@
 
                         <VerticalStackLayout Spacing="4">
                             <HorizontalStackLayout Spacing="10">
+                                <Label FontFamily="InterBold" FontSize="12" TextColor="{StaticResource NuNavy}"
+                                       Text="{Binding Listing.KindLabel}" />
                                 <Label FontFamily="InterRegular" FontSize="12" TextColor="{StaticResource InkMuted}"
                                        Text="{Binding Listing.CategoryLabel, FallbackValue='Item'}" />
                                 <Label FontFamily="InterMedium" FontSize="12" TextColor="{StaticResource NuGold}"
                                        Text="{Binding Listing.Condition, Converter={StaticResource EnumDisplay}, ConverterParameter='Good'}" />
                             </HorizontalStackLayout>
-                            <Label Text="{Binding Listing.Title, FallbackValue='Auction'}" FontFamily="InterBold" FontSize="19"
+                            <Label Text="{Binding Listing.Title, FallbackValue='Listing'}" FontFamily="InterBold" FontSize="19"
                                    TextColor="{StaticResource Ink}" />
                             <HorizontalStackLayout Spacing="5" Margin="0,2,0,0"
                                                    IsVisible="{Binding Listing.MeetupLabel, Converter={StaticResource HasValue}}">
@@ -137,8 +139,8 @@
 
                         <BoxView HeightRequest="1" Color="{StaticResource CardBorder}" />
 
-                        <!-- Stats -->
-                        <Grid ColumnDefinitions="*,*,Auto" ColumnSpacing="8">
+                        <!-- Auction stats. A set price or a swap shows its own figure instead. -->
+                        <Grid ColumnDefinitions="*,*,Auto" ColumnSpacing="8" IsVisible="{Binding Listing.IsAuction}">
                             <VerticalStackLayout Grid.Column="0" Spacing="1">
                                 <Label Text="CURRENT BID" FontFamily="InterMedium" FontSize="9.5" CharacterSpacing="0.3"
                                        TextColor="{StaticResource InkMuted}" />
@@ -159,17 +161,41 @@
                             </VerticalStackLayout>
                         </Grid>
 
-                        <!-- Countdown pill -->
+                        <VerticalStackLayout Spacing="1" IsVisible="{Binding Listing.IsAuction, Converter={StaticResource InvertBool}}">
+                            <Label Text="{Binding Listing.OfferCaption}" FontFamily="InterMedium" FontSize="9.5" CharacterSpacing="0.3"
+                                   TextColor="{StaticResource InkMuted}" />
+                            <Label FontFamily="InterBold" FontSize="19" TextColor="{StaticResource Ink}"
+                                   Text="{Binding Listing.OfferDisplay}" />
+                        </VerticalStackLayout>
+
+                        <!-- Auction clock -->
                         <Border StrokeThickness="1" Stroke="#F4DFA8" StrokeShape="RoundRectangle 999" Padding="14,9"
-                                BackgroundColor="{StaticResource GoldSoft}">
+                                BackgroundColor="{StaticResource GoldSoft}"
+                                IsVisible="{Binding Listing.HasAuctionClock}">
                             <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
-                                <Label Grid.Column="0" Text="NEXT FEED REFRESH" FontFamily="InterMedium" FontSize="11"
+                                <Label Grid.Column="0" Text="AUCTION ENDS" FontFamily="InterMedium" FontSize="11"
                                        CharacterSpacing="0.3" TextColor="#919397" VerticalOptions="Center" />
                                 <HorizontalStackLayout Grid.Column="1" Spacing="6" VerticalOptions="Center">
                                     <Path Style="{StaticResource LineTimer}" HeightRequest="15" WidthRequest="15"
                                           Stroke="{StaticResource NuNavy}" VerticalOptions="Center" />
                                     <Label FontFamily="InterBold" FontSize="12.5" TextColor="{StaticResource NuNavy}" VerticalOptions="Center"
-                                           Text="{Binding Listing.CountdownText, StringFormat='{0} until refresh'}" />
+                                           Text="{Binding Listing.CountdownText}" />
+                                </HorizontalStackLayout>
+                            </Grid>
+                        </Border>
+
+                        <!-- Hourly feed slot, only while the listing is still hidden -->
+                        <Border StrokeThickness="1" Stroke="#F4DFA8" StrokeShape="RoundRectangle 999" Padding="14,9"
+                                BackgroundColor="{StaticResource GoldSoft}"
+                                IsVisible="{Binding Listing.ShowRefreshCountdown}">
+                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                <Label Grid.Column="0" Text="JOINS THE FEED" FontFamily="InterMedium" FontSize="11"
+                                       CharacterSpacing="0.3" TextColor="#919397" VerticalOptions="Center" />
+                                <HorizontalStackLayout Grid.Column="1" Spacing="6" VerticalOptions="Center">
+                                    <Path Style="{StaticResource LineTimer}" HeightRequest="15" WidthRequest="15"
+                                          Stroke="{StaticResource NuNavy}" VerticalOptions="Center" />
+                                    <Label FontFamily="InterBold" FontSize="12.5" TextColor="{StaticResource NuNavy}" VerticalOptions="Center"
+                                           Text="{Binding Listing.RefreshCountdownText}" />
                                 </HorizontalStackLayout>
                             </Grid>
                         </Border>
@@ -201,13 +227,18 @@
                         </VerticalStackLayout>
 
                         <Border StrokeThickness="0" StrokeShape="RoundRectangle 999" Padding="14,10"
+                                BackgroundColor="{StaticResource FilterBg}" IsVisible="{Binding ShowBuyerNote}">
+                            <Label Text="{Binding Listing.BuyerNote}" FontSize="13" TextColor="{StaticResource NuNavy}" />
+                        </Border>
+
+                        <Border StrokeThickness="0" StrokeShape="RoundRectangle 999" Padding="14,10"
                                 BackgroundColor="{StaticResource FilterBg}" IsVisible="{Binding IsOwnListing}">
-                            <Label Text="This is your listing. Sellers can't bid on their own items." FontSize="13"
+                            <Label Text="This is your listing." FontSize="13"
                                    TextColor="{StaticResource NuNavy}" />
                         </Border>
 
                         <!-- Bid history -->
-                        <VerticalStackLayout Spacing="6">
+                        <VerticalStackLayout Spacing="6" IsVisible="{Binding Listing.IsAuction}">
                             <Label Text="Bid history" FontFamily="InterBold" FontSize="14" TextColor="{StaticResource Ink}" />
                             <Label Text="No bids yet — be the first." Style="{StaticResource MetaText}"
                                    IsVisible="{Binding BidHistory.Count, Converter={StaticResource CountToBool}, ConverterParameter=invert}" />

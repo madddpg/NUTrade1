@@ -12,8 +12,17 @@ public static class NUTradeConstants
     /// <summary>Featured Priority Pin upgrade fee, in centavos (₱20.00).</summary>
     public const long PriorityFeeCentavos = 2_000;
 
-    /// <summary>PayMongo QR Ph codes expire roughly this many minutes after creation.</summary>
+    /// <summary>
+    /// Fallback when a listing-fee response has no expiry. Live codes use the time
+    /// PayMongo sends, which the payment screen counts down.
+    /// </summary>
     public const int QrExpiryMinutes = 10;
+
+    /// <summary>
+    /// How long an unpaid bid deposit stays open. Mirrors DEPOSIT_INTENT_EXPIRY_MINUTES.
+    /// The bid QR countdown follows the expiry on the deposit, not this constant.
+    /// </summary>
+    public const int BidDepositWindowMinutes = 30;
 
     /// <summary>A listing stuck in <c>pending_payment</c> longer than this is expired by a scheduled Function.</summary>
     public const int PendingListingExpiryHours = 24;

@@ -16,6 +16,7 @@ public partial class OrderPaymentViewModel : BaseViewModel
     private readonly IOrderService _orders;
     private readonly INavigationService _nav;
     private IDisposable? _subscription;
+    private SecondClock? _expiryClock;
     private bool _paidNoticeShown;
 
     public OrderPaymentViewModel(IOrderService orders, INavigationService nav)
@@ -57,8 +58,8 @@ public partial class OrderPaymentViewModel : BaseViewModel
     };
 
     public string ExpiryText => Order?.QrExpiresAt is { } at
-        ? $"This code works until {at.ToLocalTime():h:mm tt}. Generate a new one after that."
-        : "QR codes expire about 30 minutes after they're generated.";
+        ? $"Expires in {CountdownClock.Format(at - DateTimeOffset.UtcNow)}"
+        : string.Empty;
 
     public override async Task OnAppearingAsync()
     {
@@ -77,6 +78,7 @@ public partial class OrderPaymentViewModel : BaseViewModel
         }
         if (Order is { IsOpen: true, NeedsFreshQr: true }) await GenerateAsync();
 
+        _expiryClock ??= new SecondClock(() => OnPropertyChanged(nameof(ExpiryText)));
         _subscription = _orders.ObserveOrder(OrderId, order =>
         {
             if (order is null) return;
@@ -128,6 +130,8 @@ public partial class OrderPaymentViewModel : BaseViewModel
     {
         _subscription?.Dispose();
         _subscription = null;
+        _expiryClock?.Dispose();
+        _expiryClock = null;
         return Task.CompletedTask;
     }
 }

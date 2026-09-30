@@ -8,7 +8,7 @@
     xmlns:vm="clr-namespace:NUTrade1.ViewModels"
     x:Name="Page"
     x:DataType="vm:PostTradeViewModel"
-    Title="Create an auction">
+    Title="Post a listing">
 
     <Grid RowDefinitions="Auto,*">
 
@@ -17,7 +17,7 @@
         <ScrollView Grid.Row="1">
             <VerticalStackLayout Padding="20,4,20,120" Spacing="12">
 
-                <Label Text="Create an auction" Style="{StaticResource ScreenTitle}" FontSize="20" />
+                <Label Text="Post a listing" Style="{StaticResource ScreenTitle}" FontSize="20" />
 
                 <Border Style="{StaticResource Card}" Padding="16">
                     <VerticalStackLayout Spacing="12">
@@ -65,6 +65,19 @@
                                 <TapGestureRecognizer Command="{Binding AddPhotoCommand}" />
                             </Border.GestureRecognizers>
                         </Border>
+
+                        <!-- Auction, set price, or swap. Auction is selected until they tap another. -->
+                        <VerticalStackLayout Spacing="6">
+                            <Label Text="Listing type" Style="{StaticResource FieldLabel}" />
+                            <HorizontalStackLayout Spacing="8">
+                                <controls:SelectableChip Text="Auction" Value="Auction" Command="{Binding SelectKindCommand}"
+                                                         IsSelected="{Binding Kind, Converter={StaticResource EnumEquals}, ConverterParameter=Auction}" />
+                                <controls:SelectableChip Text="Buy" Value="Standard" Command="{Binding SelectKindCommand}"
+                                                         IsSelected="{Binding Kind, Converter={StaticResource EnumEquals}, ConverterParameter=Standard}" />
+                                <controls:SelectableChip Text="Swap" Value="Swap" Command="{Binding SelectKindCommand}"
+                                                         IsSelected="{Binding Kind, Converter={StaticResource EnumEquals}, ConverterParameter=Swap}" />
+                            </HorizontalStackLayout>
+                        </VerticalStackLayout>
 
                         <!-- Item name -->
                         <VerticalStackLayout Spacing="5">
@@ -121,8 +134,14 @@
                             </Border>
                         </VerticalStackLayout>
 
-                        <!-- Starting bid / increment -->
-                        <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                        <!-- A set price uses the full row. An auction adds the increment beside the starting bid. -->
+                        <VerticalStackLayout Spacing="5" IsVisible="{Binding IsStandardKind}">
+                            <Label Text="Price" Style="{StaticResource FieldLabel}" />
+                            <Border Style="{StaticResource InputShell}">
+                                <Entry Style="{StaticResource ShellEntry}" Keyboard="Numeric" Text="{Binding StartingBidText}" Placeholder="₱" />
+                            </Border>
+                        </VerticalStackLayout>
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="10" IsVisible="{Binding IsAuctionKind}">
                             <VerticalStackLayout Grid.Column="0" Spacing="5">
                                 <Label Text="Starting bid" Style="{StaticResource FieldLabel}" />
                                 <Border Style="{StaticResource InputShell}">
@@ -169,11 +188,11 @@
                             <Label Text="You've used your free first post, so each new listing has a posting fee."
                                    Style="{StaticResource MetaText}" IsVisible="{Binding ShowFreeUsedNote}" />
 
-                            <controls:PackageOption Title="Free" Subtitle="First auction" Price="₱ 0" Value="Free"
+                            <controls:PackageOption Title="Free" Subtitle="First listing" Price="₱ 0" Value="Free"
                                                     IsVisible="{Binding IsFreeAvailable}"
                                                     Command="{Binding SelectPackageCommand}"
                                                     IsSelected="{Binding SelectedPackage, Converter={StaticResource EnumEquals}, ConverterParameter=Free}" />
-                            <controls:PackageOption Title="Additional" Subtitle="Additional auction" Price="₱ 10" Value="Additional"
+                            <controls:PackageOption Title="Additional" Subtitle="Additional listing" Price="₱ 10" Value="Additional"
                                                     Command="{Binding SelectPackageCommand}"
                                                     IsSelected="{Binding SelectedPackage, Converter={StaticResource EnumEquals}, ConverterParameter=Additional}" />
                             <controls:PackageOption Title="Priority" Subtitle="Pin to top of feed" Price="₱ 20" Value="Priority"

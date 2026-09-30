@@ -2,7 +2,15 @@ import { onCall, HttpsError, CallableRequest } from "firebase-functions/v2/https
 import * as logger from "firebase-functions/logger";
 import { Timestamp } from "firebase-admin/firestore";
 import { db } from "./admin";
-import { AUCTION_DURATION_HOURS, LISTING_STATUS, ListingPackage, REGION } from "./constants";
+import {
+  AUCTION_DURATION_HOURS,
+  LISTING_KIND,
+  LISTING_STATUS,
+  ListingKindName,
+  ListingPackage,
+  REGION,
+  listingKind,
+} from "./constants";
 import { visibilityFor } from "./listingVisibility";
 
 /**
@@ -31,14 +39,22 @@ export function pendingApprovalFields(pkg: ListingPackage, now: Timestamp) {
   };
 }
 
-/** The fields that put an approved listing live: countdown, pin, and feed slot. */
-export function goLiveFields(pkg: ListingPackage, now: Timestamp) {
-  return {
+/**
+ * The fields that put an approved listing live: pin, feed slot, and — for an auction
+ * only — the 24-hour clock. A standard or swap listing must not receive `auctionEndsAt`,
+ * or the closer will treat it as an auction that has already ended.
+ */
+export function goLiveFields(pkg: ListingPackage, now: Timestamp, kind: ListingKindName = "Auction") {
+  const live = {
     status: LISTING_STATUS.active,
     publishedAt: now,
-    auctionEndsAt: Timestamp.fromMillis(now.toMillis() + AUCTION_DURATION_HOURS * 3_600_000),
     isPinned: pkg === "Priority",
     ...visibilityFor(pkg, now.toMillis()),
+  };
+  if (kind !== LISTING_KIND.auction) return { ...live, auctionEndsAt: null };
+  return {
+    ...live,
+    auctionEndsAt: Timestamp.fromMillis(now.toMillis() + AUCTION_DURATION_HOURS * 3_600_000),
   };
 }
 
@@ -83,7 +99,11 @@ export const approveListing = onCall({ region: REGION }, async (request) => {
   const outcome = await db.runTransaction(async (tx) => {
     const { ref, listing } = await readPendingListing(tx, listingId);
     const now = Timestamp.now();
-    const live = goLiveFields((listing.paidPackage as ListingPackage | undefined) ?? "Free", now);
+    const live = goLiveFields(
+      (listing.paidPackage as ListingPackage | undefined) ?? "Free",
+      now,
+      listingKind(listing)
+    );
 
     tx.update(ref, { ...live, approvedAt: now, approvedBy: adminUid });
     return { ownerUid: listing.ownerUid as string, isVisible: live.isVisible };

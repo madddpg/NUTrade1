@@ -38,6 +38,14 @@ public sealed class StubUserService : IUserService
         return Task.FromResult(OperationResult.Ok());
     }
 
+    public Task<OperationResult> RegisterPushTokenAsync(string? token, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(token)) return Task.FromResult(OperationResult.Ok());
+        if (_auth.CurrentUid is { } uid && _profiles.TryGetValue(uid, out var profile) && !profile.FcmTokens.Contains(token))
+            profile.FcmTokens.Add(token);
+        return Task.FromResult(OperationResult.Ok());
+    }
+
     public Task<OperationResult> SetProgramAsync(string program, CancellationToken ct = default)
     {
         if (_auth.CurrentUid is { } uid && _profiles.TryGetValue(uid, out var profile))

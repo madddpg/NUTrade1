@@ -13,6 +13,7 @@ public static class BidEligibility
     public const string OwnListing = "You can't bid on your own listing.";
     public const string SignedOut = "Sign in to place a bid.";
     public const string Unverified = "Confirm your email before bidding.";
+    public const string NotAnAuction = "Only auctions take bids.";
     public const string NotAcceptingBids = "This auction isn't accepting bids.";
     public const string Ended = "This auction has already ended.";
 
@@ -27,6 +28,7 @@ public static class BidEligibility
         if (string.IsNullOrEmpty(uid)) return SignedOut;
         if (IsSeller(listing, uid)) return OwnListing;
         if (!isVerified) return Unverified;
+        if (listing.Kind != ListingKind.Auction) return NotAnAuction;
         if (listing.Status != ListingStatus.Active) return NotAcceptingBids;
         if (listing.AuctionEndsAt is { } ends && ends <= now) return Ended;
         return null;

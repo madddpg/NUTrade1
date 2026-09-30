@@ -121,6 +121,42 @@ public sealed class FirestoreUserService : IUserService
         }
     }
 
+    public async Task<OperationResult> RegisterPushTokenAsync(string? token, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(token)) return OperationResult.Ok();
+        if (_auth.CurrentUid is not { } uid) return OperationResult.Fail("Sign in to continue.");
+
+        UserProfile profile;
+        try
+        {
+            // Not the session cache: another signed-in device may have added a token since.
+            var document = await _firestore.GetDocumentAsync($"users/{uid}", ct);
+            if (document is not { } doc) return OperationResult.Fail("Finish your profile before enabling notifications.");
+            profile = Map(doc);
+        }
+        catch (FirestoreException ex)
+        {
+            return OperationResult.Fail(ex.Message);
+        }
+
+        if (profile.FcmTokens.Contains(token)) return OperationResult.Ok();
+
+        profile.FcmTokens.Add(token);
+        try
+        {
+            await _firestore.PatchAsync($"users/{uid}", new Dictionary<string, object?>
+            {
+                ["fcmTokens"] = Fs.Arr(profile.FcmTokens),
+            }, ct);
+            _cache[uid] = profile;
+            return OperationResult.Ok();
+        }
+        catch (FirestoreException ex)
+        {
+            return OperationResult.Fail(ex.Message);
+        }
+    }
+
     public async Task<OperationResult> SetProgramAsync(string program, CancellationToken ct = default)
     {
         if (_auth.CurrentUid is not { } uid) return OperationResult.Fail("Sign in to continue.");

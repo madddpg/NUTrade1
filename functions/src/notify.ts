@@ -7,8 +7,9 @@ import { db } from "./admin";
  * Best-effort push notification — the state it announces is already committed by
  * the time this runs, so a messaging failure (bad/stale token, client not yet
  * wired for FCM) must never fail the caller. Reads `users/{uid}.fcmTokens`
- * (string[]), which nothing currently populates client-side; sends silently
- * no-op until that registration ships.
+ * (string[]). The app writes a token there after sign-in when a device token
+ * exists; until a messaging SDK is configured the list stays empty and this
+ * send silently no-ops.
  */
 export async function notifyUser(
   uid: string,

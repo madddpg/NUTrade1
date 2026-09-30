@@ -38,8 +38,9 @@ public sealed class UserProfile
 
     /// <summary>
     /// Push registration tokens (one per signed-in device), read by Cloud Functions to
-    /// notify the seller when a listing goes live. Not yet populated by the client —
-    /// no Firebase Cloud Messaging plugin is wired into the MAUI app yet.
+    /// notify the seller when a listing goes live. Written by
+    /// <see cref="IUserService.RegisterPushTokenAsync"/> when <see cref="IPushTokenProvider"/>
+    /// returns a real device token. Empty until a messaging SDK is configured.
     /// </summary>
     public List<string> FcmTokens { get; set; } = new();
 }

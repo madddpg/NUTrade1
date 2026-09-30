@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Microsoft.Maui.Storage;
 using NUTrade1.Core;
 using NUTrade1.Services;
 using NUTrade1.Services.Firebase;
@@ -118,6 +119,8 @@ namespace NUTrade1
 
         private static void RegisterServices(IServiceCollection services)
         {
+            services.AddSingleton<IPushTokenProvider, UnconfiguredPushTokenProvider>();
+            services.AddSingleton<ILocalCache>(_ => new JsonFileCache(FileSystem.AppDataDirectory));
             services.AddSingleton<AppShell>();
             services.AddSingleton<INavigationService, ShellNavigationService>();
             services.AddSingleton<WinWatcher>();
@@ -136,6 +139,12 @@ namespace NUTrade1
         private static void RegisterFirebaseBackend(IServiceCollection services)
         {
             services.AddSingleton(_ => new HttpClient { Timeout = TimeSpan.FromSeconds(30) });
+            services.AddSingleton(_ =>
+            {
+                var limiter = new ApiRateLimiter();
+                limiter.Throttled += message => Toaster.Info(message);
+                return limiter;
+            });
 
             // One instance, two roles: IAuthService for the app, IFirebaseTokenProvider
             // for the transports that need to attach its ID token.

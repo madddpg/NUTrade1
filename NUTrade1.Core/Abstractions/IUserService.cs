@@ -19,4 +19,11 @@ public interface IUserService
     /// Writes that one field only, so it can't clobber anything else on the profile.
     /// </summary>
     Task<OperationResult> SetProgramAsync(string program, CancellationToken ct = default);
+
+    /// <summary>
+    /// Adds <paramref name="token"/> to <c>users/{uid}.fcmTokens</c> when it is not already
+    /// there. A null or blank token is ignored — the app has no messaging SDK until one is
+    /// configured, and it must not write a placeholder.
+    /// </summary>
+    Task<OperationResult> RegisterPushTokenAsync(string? token, CancellationToken ct = default);
 }

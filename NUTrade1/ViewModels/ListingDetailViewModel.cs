@@ -31,7 +31,7 @@ public partial class ListingDetailViewModel : BaseViewModel
         _nav = nav;
         _users = users;
         _auth = auth;
-        Title = "Auction";
+        Title = "Listing";
     }
 
     [ObservableProperty] private string? _listingId;
@@ -45,10 +45,14 @@ public partial class ListingDetailViewModel : BaseViewModel
     public bool IsOwnListing => BidEligibility.IsSeller(Listing, _auth.CurrentUid);
 
     /// <summary>
-    /// The bid form is for buyers only. It stays hidden until the listing has loaded, so a
-    /// seller never sees it flash up on their own item while the page is fetching.
+    /// The bid form is for buyers of an auction only. It stays hidden until the listing
+    /// has loaded, so a seller never sees it flash up on their own item while the page
+    /// is fetching, and a set price or a swap never offers a bid.
     /// </summary>
-    public bool ShowBidForm => Listing is not null && !IsOwnListing;
+    public bool ShowBidForm => Listing is { IsAuction: true } && !IsOwnListing;
+
+    /// <summary>The note that replaces the bid form on a set price or a swap.</summary>
+    public bool ShowBuyerNote => Listing is { IsAuction: false } && !IsOwnListing;
 
     /// <summary>Why the current student can't bid right now, or null if they can. Mirrors `requestBid`.</summary>
     private string? WhyCantBid() =>
@@ -74,7 +78,7 @@ public partial class ListingDetailViewModel : BaseViewModel
             var bidsTask = _bids.GetBidsForListingAsync(ListingId);
 
             Listing = await _listings.GetListingAsync(ListingId);
-            Title = Listing?.Title ?? "Auction";
+            Title = Listing?.Title ?? "Listing";
             Seller = Listing is null ? null : await _users.GetProfileAsync(Listing.OwnerUid);
             RaiseListingDependentProps();
 
@@ -171,6 +175,7 @@ public partial class ListingDetailViewModel : BaseViewModel
     {
         OnPropertyChanged(nameof(IsOwnListing));
         OnPropertyChanged(nameof(ShowBidForm));
+        OnPropertyChanged(nameof(ShowBuyerNote));
         OnPropertyChanged(nameof(CurrentBidDisplay));
         OnPropertyChanged(nameof(MinNextBidDisplay));
         OnPropertyChanged(nameof(BidCountDisplay));

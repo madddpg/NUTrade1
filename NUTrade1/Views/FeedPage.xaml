@@ -143,20 +143,26 @@
 
                                 <!-- Body -->
                                 <VerticalStackLayout Padding="4,9,4,3" Spacing="2">
-                                    <Label FontFamily="InterBold" FontSize="9.5" CharacterSpacing="0.4" TextTransform="Uppercase"
-                                           TextColor="{StaticResource NuGold}"
-                                           Text="{Binding Category, Converter={StaticResource EnumDisplay}, ConverterParameter='Item'}" />
+                                    <HorizontalStackLayout Spacing="4">
+                                        <Label FontFamily="InterBold" FontSize="9.5" CharacterSpacing="0.4" TextTransform="Uppercase"
+                                               TextColor="{StaticResource NuNavy}" Text="{Binding KindLabel}" />
+                                        <Label FontFamily="InterBold" FontSize="9.5" TextColor="{StaticResource InkMuted}" Text="·" />
+                                        <Label FontFamily="InterBold" FontSize="9.5" CharacterSpacing="0.4" TextTransform="Uppercase"
+                                               TextColor="{StaticResource NuGold}"
+                                               Text="{Binding Category, Converter={StaticResource EnumDisplay}, ConverterParameter='Item'}" />
+                                    </HorizontalStackLayout>
                                     <Label FontFamily="InterBold" FontSize="13.5" TextColor="{StaticResource Ink}"
                                            MaxLines="2" LineBreakMode="TailTruncation" Text="{Binding Title}" />
-                                    <Label Text="HIGHEST BID" FontFamily="InterMedium" FontSize="9.5" CharacterSpacing="0.4"
+                                    <Label Text="{Binding OfferCaption}" FontFamily="InterMedium" FontSize="9.5" CharacterSpacing="0.4"
                                            TextColor="{StaticResource InkMuted}" Margin="0,4,0,0" />
                                     <Label FontFamily="InterBold" FontSize="16" TextColor="{StaticResource Ink}"
-                                           Text="{Binding CurrentHighestBidCentavos, Converter={StaticResource Centavos}}" />
+                                           Text="{Binding OfferDisplay}" />
                                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="4" Margin="0,5,0,0">
                                         <Label Grid.Column="0" FontFamily="InterRegular" FontSize="9.5" TextColor="{StaticResource InkMuted}"
                                                LineBreakMode="TailTruncation" VerticalOptions="Center"
-                                               Text="{Binding BidCount, StringFormat='{0} bids · refreshes hourly'}" />
-                                        <HorizontalStackLayout Grid.Column="1" Spacing="3" VerticalOptions="Center">
+                                               Text="{Binding FeedFootnote}" />
+                                        <HorizontalStackLayout Grid.Column="1" Spacing="3" VerticalOptions="Center"
+                                                               IsVisible="{Binding CountdownText, Converter={StaticResource HasValue}}">
                                             <Path Style="{StaticResource LineTimer}" HeightRequest="10" WidthRequest="10"
                                                   Stroke="{StaticResource InkMuted}" StrokeThickness="2" VerticalOptions="Center" />
                                             <Label FontFamily="InterRegular" FontSize="9.5" TextColor="{StaticResource InkMuted}"
@@ -194,8 +200,8 @@
                         <VerticalStackLayout Spacing="8" Margin="0,26,0,0" IsVisible="{Binding ShowEmptyState}">
                             <Path Style="{StaticResource IconTag}" HeightRequest="34" WidthRequest="34" HorizontalOptions="Center"
                                   Fill="{StaticResource InkMuted}" />
-                            <Label Text="No auctions yet" Style="{StaticResource CardTitle}" HorizontalOptions="Center" />
-                            <Label Text="Published auctions from around campus will show up here. Be the first — tap + to post one."
+                            <Label Text="No listings yet" Style="{StaticResource CardTitle}" HorizontalOptions="Center" />
+                            <Label Text="Published listings from around campus will show up here. Be the first — tap + to post one."
                                    Style="{StaticResource ScreenSubtitle}" HorizontalTextAlignment="Center" />
                         </VerticalStackLayout>
                     </VerticalStackLayout>

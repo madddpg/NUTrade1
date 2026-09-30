@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using NUTrade1.Core;
 
 namespace NUTrade1.Services.Firebase;
 
@@ -24,23 +25,25 @@ public sealed class FirestoreClient
 {
     private readonly HttpClient _http;
     private readonly IFirebaseTokenProvider _tokens;
+    private readonly ApiRateLimiter _limiter;
 
     private static readonly JsonSerializerOptions SerializerOptions = new()
     {
         DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.Never,
     };
 
-    public FirestoreClient(HttpClient http, IFirebaseTokenProvider tokens)
+    public FirestoreClient(HttpClient http, IFirebaseTokenProvider tokens, ApiRateLimiter limiter)
     {
         _http = http;
         _tokens = tokens;
+        _limiter = limiter;
     }
 
     /// <summary>Reads one document. Returns null when it does not exist (a 404 is not an error here).</summary>
     public async Task<JsonElement?> GetDocumentAsync(string path, CancellationToken ct = default)
     {
         using var request = await BuildAsync(HttpMethod.Get, $"{FirebaseSettings.FirestoreDocuments}/{path}", null, ct);
-        using var response = await _http.SendAsync(request, ct);
+        using var response = await SendLimitedAsync(request, ct);
 
         if (response.StatusCode == HttpStatusCode.NotFound) return null;
         await ThrowIfFailedAsync(response, ct);
@@ -64,7 +67,7 @@ public sealed class FirestoreClient
         var body = new Dictionary<string, object?> { ["structuredQuery"] = structuredQuery };
 
         using var request = await BuildAsync(HttpMethod.Post, url, body, ct);
-        using var response = await _http.SendAsync(request, ct);
+        using var response = await SendLimitedAsync(request, ct);
         await ThrowIfFailedAsync(response, ct);
 
         using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync(ct));
@@ -94,7 +97,7 @@ public sealed class FirestoreClient
         var body = new Dictionary<string, object?> { ["fields"] = fields };
 
         using var request = await BuildAsync(HttpMethod.Post, url, body, ct);
-        using var response = await _http.SendAsync(request, ct);
+        using var response = await SendLimitedAsync(request, ct);
         await ThrowIfFailedAsync(response, ct);
 
         using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync(ct));
@@ -112,14 +115,14 @@ public sealed class FirestoreClient
         var body = new Dictionary<string, object?> { ["fields"] = fields };
 
         using var request = await BuildAsync(HttpMethod.Patch, url, body, ct);
-        using var response = await _http.SendAsync(request, ct);
+        using var response = await SendLimitedAsync(request, ct);
         await ThrowIfFailedAsync(response, ct);
     }
 
     public async Task DeleteAsync(string path, CancellationToken ct = default)
     {
         using var request = await BuildAsync(HttpMethod.Delete, $"{FirebaseSettings.FirestoreDocuments}/{path}", null, ct);
-        using var response = await _http.SendAsync(request, ct);
+        using var response = await SendLimitedAsync(request, ct);
         await ThrowIfFailedAsync(response, ct);
     }
 
@@ -136,6 +139,12 @@ public sealed class FirestoreClient
             request.Content = JsonContent.Create(body, options: SerializerOptions);
 
         return request;
+    }
+
+    private async Task<HttpResponseMessage> SendLimitedAsync(HttpRequestMessage request, CancellationToken ct)
+    {
+        await _limiter.AcquireAsync(ct);
+        return await _http.SendAsync(request, ct);
     }
 
     private static async Task ThrowIfFailedAsync(HttpResponseMessage response, CancellationToken ct)
