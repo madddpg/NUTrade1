@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView
+    x:Class="NUTrade1.Controls.TopBar"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
+
+    <!-- The mockup header: the NUTrade mark in a thin-ringed white circle, then the
+         wordmark — "NU" in navy, "Trade" in gold. -->
+    <HorizontalStackLayout Padding="20,14,20,8" Spacing="9" VerticalOptions="Start">
+        <Border HeightRequest="40" WidthRequest="40" StrokeThickness="1" Stroke="#D6DCE6"
+                StrokeShape="RoundRectangle 999" BackgroundColor="{StaticResource White}" VerticalOptions="Center">
+            <Image Source="nutrade_mark.png" HeightRequest="26" WidthRequest="26" Aspect="AspectFit"
+                   HorizontalOptions="Center" VerticalOptions="Center" />
+        </Border>
+        <Label VerticalOptions="Center">
+            <Label.FormattedText>
+                <FormattedString>
+                    <Span Text="NU" FontFamily="InterExtraBold" FontSize="23" TextColor="{StaticResource NuNavy}" />
+                    <Span Text="Trade" FontFamily="InterExtraBold" FontSize="23" TextColor="{StaticResource NuGold}" />
+                </FormattedString>
+            </Label.FormattedText>
+        </Label>
+    </HorizontalStackLayout>
+</ContentView>

@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<views:AppContentPage
+    x:Class="NUTrade1.Views.ChatRoomPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:views="clr-namespace:NUTrade1.Views"
+    xmlns:controls="clr-namespace:NUTrade1.Controls"
+    xmlns:vm="clr-namespace:NUTrade1.ViewModels"
+    xmlns:core="clr-namespace:NUTrade1.Core;assembly=NUTrade1.Core"
+    x:DataType="vm:ChatRoomViewModel"
+    Title="Chat">
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto">
+
+        <controls:DetailBar Grid.Row="0" HeaderTitle="{Binding HeaderTitle}" />
+
+        <!-- Trade completion. Both participants must confirm before markTradeCompleted
+             closes the trade out, so this stays visible (disabled) after you tap it. -->
+        <Border Grid.Row="1" Style="{StaticResource Card}" Margin="16,4,16,8" Padding="14,12"
+                IsVisible="{Binding ShowCompletionBar}">
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                <VerticalStackLayout Grid.Column="0" Spacing="2" VerticalOptions="Center">
+                    <Label Text="{Binding WinningBidDisplay, StringFormat='Winning bid {0}'}"
+                           Style="{StaticResource CardTitle}" FontSize="13.5" />
+                    <Label Text="{Binding CompletionStatusText}" Style="{StaticResource MetaText}" />
+                </VerticalStackLayout>
+                <Button Grid.Column="1" Text="Mark completed" Style="{StaticResource NavyButton}"
+                        FontSize="12" Padding="14,0" HeightRequest="34" VerticalOptions="Center"
+                        IsVisible="{Binding CanMarkCompleted}"
+                        Command="{Binding MarkCompletedCommand}" IsEnabled="{Binding IsNotBusy}" />
+            </Grid>
+        </Border>
+
+        <!-- The conversation loading: message bubbles in bones. -->
+        <controls:Skeleton Grid.Row="2" IsActive="{Binding IsLoading}" Margin="16,4">
+            <VerticalStackLayout Spacing="8">
+                <Border Style="{StaticResource Bone}" HeightRequest="44" WidthRequest="190" StrokeShape="RoundRectangle 16,16,16,4" />
+                <Border Style="{StaticResource Bone}" HeightRequest="44" WidthRequest="140" StrokeShape="RoundRectangle 16,16,16,4" />
+                <Border Style="{StaticResource Bone}" HeightRequest="62" WidthRequest="230" StrokeShape="RoundRectangle 16,16,16,4" />
+                <Border Style="{StaticResource Bone}" HeightRequest="44" WidthRequest="120" StrokeShape="RoundRectangle 16,16,16,4" />
+            </VerticalStackLayout>
+        </controls:Skeleton>
+
+        <CollectionView Grid.Row="2" ItemsSource="{Binding Messages}" Margin="16,4" IsVisible="{Binding IsNotLoading}">
+            <CollectionView.EmptyView>
+                <VerticalStackLayout Padding="24,70" Spacing="8">
+                    <Path Style="{StaticResource IconChat}" HeightRequest="30" WidthRequest="30" HorizontalOptions="Center"
+                          Fill="{StaticResource InkMuted}" />
+                    <Label Text="Say hello" Style="{StaticResource CardTitle}" HorizontalOptions="Center" />
+                    <Label Text="Agree on a time and a campus meetup zone to hand over the items."
+                           Style="{StaticResource ScreenSubtitle}" HorizontalTextAlignment="Center" />
+                </VerticalStackLayout>
+            </CollectionView.EmptyView>
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="core:ChatMessage">
+                    <Border Style="{StaticResource Card}" Padding="12,9" Margin="0,4" HorizontalOptions="Start"
+                            StrokeShape="RoundRectangle 16,16,16,4">
+                        <VerticalStackLayout Spacing="2">
+                            <Label Text="{Binding Text}" Style="{StaticResource BodyText}" FontSize="14" />
+                            <Label Text="{Binding SentAt, Converter={StaticResource TimeAgo}}" Style="{StaticResource MetaText}" FontSize="10.5" />
+                        </VerticalStackLayout>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <Border Grid.Row="3" BackgroundColor="{AppThemeBinding Light={StaticResource CardBg}, Dark={StaticResource CardBgDark}}"
+                Stroke="{AppThemeBinding Light={StaticResource CardBorder}, Dark={StaticResource CardBorderDark}}"
+                StrokeThickness="1" Padding="16,12,16,18">
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                <Border Grid.Column="0" Style="{StaticResource InputShell}">
+                    <Entry Style="{StaticResource ShellEntry}" Text="{Binding Draft}" Placeholder="Message"
+                           ReturnCommand="{Binding SendCommand}" />
+                </Border>
+                <Border Grid.Column="1" Background="{StaticResource GoldBrush}" StrokeThickness="0" StrokeShape="RoundRectangle 999"
+                        HeightRequest="46" WidthRequest="46" VerticalOptions="Center">
+                    <Path Style="{StaticResource IconChevronRight}" HeightRequest="20" WidthRequest="20" Fill="{StaticResource NuNavy}" />
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding SendCommand}" />
+                    </Border.GestureRecognizers>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- In-app notifications (posted, won, paid) draw over the page -->
+        <controls:NotificationHost Grid.Row="0" Grid.RowSpan="4" />
+        <controls:ToastHost Grid.Row="0" Grid.RowSpan="4" />
+    </Grid>
+
+</views:AppContentPage>

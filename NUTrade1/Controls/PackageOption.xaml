@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView
+    x:Class="NUTrade1.Controls.PackageOption"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
+
+    <!-- One row of "Choose a package", as in the mockup: title and caption on the left,
+         price on the right. The selected row is outlined in gold — see Repaint(). -->
+    <Border x:Name="Root" Padding="16,9" StrokeShape="RoundRectangle 14">
+        <Border.GestureRecognizers>
+            <TapGestureRecognizer Tapped="OnTapped" />
+        </Border.GestureRecognizers>
+
+        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+            <VerticalStackLayout Grid.Column="0" Spacing="0" VerticalOptions="Center">
+                <Label x:Name="TitleLabel" FontFamily="InterBold" FontSize="13.5" TextColor="{StaticResource NuNavy}" />
+                <Label x:Name="SubtitleLabel" FontFamily="InterRegular" FontSize="10.5" TextColor="#506387" />
+            </VerticalStackLayout>
+            <Label x:Name="PriceLabel" Grid.Column="1" FontFamily="InterBold" FontSize="14"
+                   TextColor="{StaticResource NuNavy}" VerticalOptions="Center" />
+        </Grid>
+    </Border>
+</ContentView>

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<views:AppContentPage
+    x:Class="NUTrade1.Views.ProfileSetupPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:views="clr-namespace:NUTrade1.Views"
+    xmlns:controls="clr-namespace:NUTrade1.Controls"
+    xmlns:vm="clr-namespace:NUTrade1.ViewModels"
+    x:DataType="vm:ProfileSetupViewModel"
+    Shell.NavBarIsVisible="False"
+    Title="Profile setup">
+
+    <Grid>
+    <ScrollView>
+        <VerticalStackLayout Padding="24,28" Spacing="18">
+
+            <VerticalStackLayout Spacing="3">
+                <Label Text="One more step" Style="{StaticResource Kicker}" />
+                <Label Text="Set up your profile" Style="{StaticResource ScreenTitle}" />
+                <Label Text="This is how you'll appear to other students when you swap." Style="{StaticResource ScreenSubtitle}" />
+            </VerticalStackLayout>
+
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                <VerticalStackLayout Grid.Column="0" Spacing="8">
+                    <Label Text="First name" Style="{StaticResource FieldLabel}" />
+                    <Border Style="{StaticResource InputShell}">
+                        <Entry Style="{StaticResource ShellEntry}" Text="{Binding FirstName}" Placeholder="Juan" />
+                    </Border>
+                </VerticalStackLayout>
+                <VerticalStackLayout Grid.Column="1" Spacing="8">
+                    <Label Text="Last name" Style="{StaticResource FieldLabel}" />
+                    <Border Style="{StaticResource InputShell}">
+                        <Entry Style="{StaticResource ShellEntry}" Text="{Binding LastName}" Placeholder="dela Cruz" />
+                    </Border>
+                </VerticalStackLayout>
+            </Grid>
+
+            <VerticalStackLayout Spacing="8">
+                <Label Text="Program" Style="{StaticResource FieldLabel}" />
+                <Border Style="{StaticResource InputShell}">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Picker Grid.Column="0" Style="{StaticResource ShellPicker}" Title="Select your program"
+                                ItemsSource="{Binding Programs}" SelectedItem="{Binding SelectedProgram}" />
+                        <Path Grid.Column="1" Style="{StaticResource IconChevronDown}" HeightRequest="14" WidthRequest="14"
+                              Fill="{StaticResource InkMuted}" VerticalOptions="Center" InputTransparent="True"
+                              IsVisible="{OnPlatform Default=True, WinUI=False}" />
+                    </Grid>
+                </Border>
+            </VerticalStackLayout>
+
+            <Button Text="Save and continue" Style="{StaticResource GoldButton}" Margin="0,6,0,0"
+                    Command="{Binding SaveCommand}" IsEnabled="{Binding IsNotBusy}" />
+            <controls:LoadingDots IsRunning="{Binding IsBusy}" />
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+        <controls:ToastHost />
+    </Grid>
+
+</views:AppContentPage>

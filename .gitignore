@@ -1,0 +1,53 @@
+## Build output
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+[Ll]og/
+[Ll]ogs/
+
+## Visual Studio / Rider
+.vs/
+.idea/
+*.user
+*.suo
+*.userprefs
+*.DotSettings.user
+
+## .NET
+project.lock.json
+project.fragment.lock.json
+artifacts/
+*.nupkg
+*.snupkg
+
+## MAUI / mobile build artifacts
+*.binlog
+*.apk
+*.aab
+*.ipa
+*.app
+*.dSYM/
+
+## Test results
+[Tt]est[Rr]esult*/
+*.trx
+*.coverage
+*.coverage.xml
+coverage/
+
+## Firebase / secrets — provided per environment, never committed
+google-services.json
+GoogleService-Info.plist
+**/Platforms/Android/google-services.json
+**/Platforms/iOS/GoogleService-Info.plist
+.env
+.env.*
+functions/.env
+functions/node_modules/
+firebase-debug.log
+.firebase/
+serviceAccountKey*.json
+
+## OS
+.DS_Store
+Thumbs.db

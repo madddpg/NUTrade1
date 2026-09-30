@@ -1,0 +1,248 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---- Helpers -------------------------------------------------------------
+    function isSignedIn() { return request.auth != null; }
+    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
+    function isVerified() { return isSignedIn() && request.auth.token.verified == true; }
+    // Admins carry a custom claim, which only the Admin SDK can set: `role: 'admin'`
+    // (bootstrapAdmin) or `admin: true`, the web admin panel's name for the same thing.
+    // Deliberately NOT trusted: `role` on the user's own users/{uid} document.
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.get('role', '') == 'admin'
+        || request.auth.token.get('admin', false) == true
+      );
+    }
+
+    // Mirrors NUTradeConstants.Programs and PROGRAMS in functions/src/constants.ts.
+    function programs() { return ['SACE', 'SAHS', 'SABM', 'SHS']; }
+
+    function changedKeys() {
+      return request.resource.data.diff(resource.data).affectedKeys();
+    }
+
+    // ---- Users ---------------------------------------------------------------
+    match /users/{userId} {
+      allow read: if isSignedIn();
+
+      // A new account is always unverified and unprivileged. The `verified` custom
+      // claim is granted by verifyEmailOtp once the student enters the code emailed
+      // to them; setUserVerification lets an admin revoke it afterwards.
+      allow create: if isOwner(userId)
+        && request.resource.data.uid == userId
+        && request.resource.data.verificationStatus == 'pending'
+        && request.resource.data.role == 'student'
+        && request.resource.data.tradesCompleted == 0
+        // Blank for app builds from before the program was asked for.
+        && request.resource.data.get('program', '') in [''].concat(programs());
+
+      // Students may edit their own presentational fields and submit an ID photo,
+      // but never their own verification state, role, or trade history.
+      allow update: if isAdmin()
+        || (isOwner(userId) && changedKeys().hasOnly([
+              'displayName', 'studentId', 'campusHub', 'photoUrl', 'idPhotoUrl',
+              'fcmTokens', 'program'
+            ])
+            // Shown to other students under the name, so only a real program. Checked
+            // only when it changes: older profiles may hold something else.
+            && (!changedKeys().hasAny(['program'])
+                || request.resource.data.program in programs()));
+
+      allow delete: if false;
+    }
+
+    // ---- Listings ------------------------------------------------------------
+    match /listings/{listingId} {
+      allow read: if isSignedIn();
+
+      // Clients may only ever author a *draft*. Every later status, pinning, and
+      // every auction counter are Admin-SDK only: createQrPayment and the PayMongo
+      // webhook move a paid draft to pending_approval, and only an admin's
+      // approveListing / rejectListing decides what happens after that.
+      allow create: if isVerified()
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.status == 'draft'
+        && request.resource.data.isPinned == false
+        && request.resource.data.bidCount == 0
+        && request.resource.data.highestBidderUid == null
+        && request.resource.data.winningBidId == null
+        && request.resource.data.publishedAt == null
+        // Feed visibility is decided at publish time by visibilityFor(), not by the
+        // client — it is the whole substance of the Priority fee.
+        && request.resource.data.isVisible == false
+        && request.resource.data.startingBidCentavos is int
+        && request.resource.data.startingBidCentavos > 0
+        && request.resource.data.minIncrementCentavos is int
+        && request.resource.data.minIncrementCentavos > 0
+        // "Add up to 4 photos": MAX_LISTING_PHOTOS / NUTradeConstants.MaxListingPhotos.
+        // Checked here because a listing can't be edited after creation (update is
+        // denied below), so this is the one place the photo count is ever set.
+        && request.resource.data.photos is list
+        && request.resource.data.photos.size() <= 4;
+        // No duration check: every auction runs AUCTION_DURATION_HOURS, applied
+        // server-side at publish. The create form no longer asks.
+
+      // Every mutation goes through a Cloud Function — the web admin panel included,
+      // which approves and rejects through approveListing / rejectListing.
+      allow update: if false;
+      allow delete: if isOwner(resource.data.ownerUid) && resource.data.status == 'draft';
+
+      // Bids are written only by placeBid / approveBid / declineBid / withdrawBid.
+      // Bid history is readable by any signed-in student because the listing detail
+      // page shows it.
+      match /bids/{bidId} {
+        allow read: if isSignedIn();
+        allow write: if false;
+      }
+    }
+
+    // The My Bids tab reads every listings/{id}/bids subcollection at once with a
+    // collection-group query. A nested match only authorises the literal path it is
+    // written under, so that query is denied unless a recursive match exists too —
+    // this is that rule, not a duplicate of the one above.
+    match /{path=**}/bids/{bidId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    // ---- Chats ---------------------------------------------------------------
+    function chatParticipants(chatId) {
+      return get(/databases/$(database)/documents/chats/$(chatId)).data.participantUids;
+    }
+
+    match /chats/{chatId} {
+      // Opened by awardListing when an auction is won; closed by markTradeCompleted.
+      allow read: if isSignedIn() && request.auth.uid in resource.data.participantUids;
+      allow write: if false;
+
+      match /messages/{messageId} {
+        allow read: if isSignedIn() && request.auth.uid in chatParticipants(chatId);
+
+        // Participants type their own messages; only a Function may post as
+        // 'system'. onChatMessageCreated mirrors the text onto the parent chat.
+        allow create: if isSignedIn()
+          && request.auth.uid in chatParticipants(chatId)
+          && request.resource.data.senderUid == request.auth.uid
+          && request.resource.data.type == 'text'
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0
+          && request.resource.data.text.size() <= 2000;
+
+        allow update, delete: if false;
+      }
+    }
+
+    // ---- Email one-time codes -------------------------------------------------
+    // Hashed codes and attempt counters. Entirely invisible to clients: a student
+    // who could read their own challenge document could brute-force the hash offline,
+    // and one who could write it could reset their own attempt counter. Both sides go
+    // through sendEmailOtp / verifyEmailOtp.
+    match /otpChallenges/{userId} {
+      allow read, write: if false;
+    }
+
+    // The same, for the two flows that mail a code to a signed-out caller: registration
+    // and forgot-password. Both are keyed by a hash of the address rather than the
+    // address itself, and both hold a hashed code and then a hashed one-time token, so
+    // there is nothing here a client may see. startSignup / verifySignupCode and
+    // startPasswordReset / verifyPasswordResetCode / completePasswordReset are the only
+    // way in. (Unlisted collections are denied anyway — these are spelled out so the
+    // intent survives the next edit.)
+    match /signupChallenges/{emailHash} {
+      allow read, write: if false;
+    }
+
+    match /passwordResetChallenges/{emailHash} {
+      allow read, write: if false;
+    }
+
+    // How many codes each address has been mailed this hour, so the per-send cooldown
+    // can't be ridden indefinitely. Survives challenge deletion, which is the whole
+    // point of keeping it out of the challenge documents. Written only by
+    // consumeMailAllowance. A Firestore TTL policy on expiresAt sweeps spent counters.
+    match /mailRateLimits/{emailHash} {
+      allow read, write: if false;
+    }
+
+    // ---- Server-owned records ------------------------------------------------
+    // Payments: the client reads its own doc to drive the QR screen, nothing more.
+    match /payments/{paymentId} {
+      allow read: if isOwner(resource.data.uid) || isAdmin();
+      allow write: if false;
+    }
+
+    // Listing-fee revenue records, written by paymongoWebhook.
+    match /transactions/{txId} {
+      allow read: if isOwner(resource.data.userId) || isAdmin();
+      allow write: if false;
+    }
+
+    // Completed student-to-student trades, written by markTradeCompleted.
+    match /trades/{tradeId} {
+      allow read: if isSignedIn() && request.auth.uid in resource.data.participantUids;
+      allow write: if false;
+    }
+
+    // What the winning bidder owes the seller. Both sides read it — the buyer to pay,
+    // the seller to watch for payment — but neither may write. Settlement is asserted
+    // only by PayMongo's signed webhook, never by a student: a client that could set
+    // `status: 'paid'` could take an item without paying for it. Written by
+    // createOrderQrPayment, paymongoWebhook and releaseUnpaidOrders.
+    match /orders/{orderId} {
+      allow read: if isSignedIn() && request.auth.uid in resource.data.participantUids;
+      allow write: if false;
+    }
+
+    // Bid deposits. The bidder reads their own to drive the QR screen and to see where
+    // the money ended up; the seller reads the ones on their listing. Never written by a
+    // client — requestBid mints them, commitDeposit settles them, and a client that could
+    // write here could place a bid without paying for it.
+    match /bidIntents/{intentId} {
+      allow read: if isOwner(resource.data.bidderUid)
+                  || isOwner(resource.data.sellerUid)
+                  || isAdmin();
+      allow write: if false;
+    }
+
+    // No-show disputes. Both sides read the one about their own trade so neither is
+    // arguing in the dark; only resolveDispute writes, because forfeiting a deposit is
+    // an admin decision and a seller who could write here could take the money.
+    match /disputes/{disputeId} {
+      allow read: if isOwner(resource.data.sellerUid)
+                  || isOwner(resource.data.buyerUid)
+                  || isAdmin();
+      allow write: if false;
+    }
+
+    // ---- Internal wallet -----------------------------------------------------
+    // The balance a student can see but never move. Every change is written by a Cloud
+    // Function inside a transaction that also writes the ledger entry explaining it, so
+    // a client that could write here could mint money out of nothing.
+    match /wallets/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if false;
+    }
+
+    // Append-only, and append-only from the server. Readable by the student it belongs
+    // to so the balance above can be audited rather than merely believed.
+    match /ledgerEntries/{entryId} {
+      allow read: if isOwner(resource.data.uid) || isAdmin();
+      allow write: if false;
+    }
+
+    // Cash-out requests. The student reads their own to follow the status; only
+    // requestPayout / markPayoutPaid / declinePayout write, because the balance is
+    // debited in the same transaction that raises the request.
+    match /payoutRequests/{requestId} {
+      allow read: if isOwner(resource.data.uid) || isAdmin();
+      allow write: if false;
+    }
+
+    match /counters/{counterId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+  }
+}

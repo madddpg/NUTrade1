@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView
+    x:Class="NUTrade1.Controls.BackLink"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
+
+    <!-- The mockup's quiet "‹ Back" under the header on inner screens. -->
+    <HorizontalStackLayout Spacing="6" Padding="20,4,20,8" HorizontalOptions="Start">
+        <HorizontalStackLayout.GestureRecognizers>
+            <TapGestureRecognizer Tapped="OnTapped" />
+        </HorizontalStackLayout.GestureRecognizers>
+        <Path Style="{StaticResource LineChevronLeft}" HeightRequest="18" WidthRequest="18"
+              Stroke="{StaticResource InkMuted}" VerticalOptions="Center" />
+        <Label Text="Back" FontFamily="InterRegular" FontSize="15" TextColor="{StaticResource InkMuted}"
+               VerticalOptions="Center" />
+    </HorizontalStackLayout>
+</ContentView>

@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView
+    x:Class="NUTrade1.Controls.NotificationHost"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    VerticalOptions="Start"
+    IsVisible="False">
+
+    <!-- The notification card from the design (image 7). Hosted as the last child of a
+         page-root Grid, spanning every row, so it draws over the page. -->
+    <Border x:Name="Card" Margin="14,10,14,0" Padding="16,14,12,14" StrokeShape="RoundRectangle 16"
+            Stroke="{StaticResource NotifyBorder}" StrokeThickness="1.5" BackgroundColor="{StaticResource White}">
+        <Border.Shadow>
+            <Shadow Brush="{StaticResource CardShadow}" Offset="0,10" Radius="24" Opacity="1" />
+        </Border.Shadow>
+
+        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+            <Border Grid.Column="0" HeightRequest="40" WidthRequest="40" StrokeThickness="0" StrokeShape="RoundRectangle 999"
+                    BackgroundColor="{StaticResource NotifyCheckBg}" VerticalOptions="Start" Margin="0,2,0,0">
+                <Path Style="{StaticResource LineCheck}" HeightRequest="18" WidthRequest="18" StrokeThickness="2.4"
+                      Stroke="{StaticResource NotifyCheck}" HorizontalOptions="Center" VerticalOptions="Center" />
+            </Border>
+
+            <VerticalStackLayout Grid.Column="1" Spacing="3">
+                <Label x:Name="TitleLabel" FontFamily="InterBold" FontSize="15" TextColor="{StaticResource NotifyTitle}" />
+                <Label x:Name="BodyLabel" FontFamily="InterRegular" FontSize="12.5" LineHeight="1.25"
+                       TextColor="{StaticResource NotifyBody}" MaxLines="2" LineBreakMode="TailTruncation" />
+                <HorizontalStackLayout Spacing="8" Margin="0,8,0,0">
+                    <Border x:Name="ActionButton" BackgroundColor="{StaticResource NotifyPrimary}" StrokeThickness="0"
+                            StrokeShape="RoundRectangle 999" Padding="16,6">
+                        <Label x:Name="ActionLabel" FontFamily="InterBold" FontSize="12.5" TextColor="{StaticResource NotifyPrimaryText}" />
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnActionTapped" />
+                        </Border.GestureRecognizers>
+                    </Border>
+                    <Border BackgroundColor="{StaticResource NotifyDismissBg}" StrokeThickness="0"
+                            StrokeShape="RoundRectangle 999" Padding="16,6">
+                        <Label Text="Dismiss" FontFamily="InterSemiBold" FontSize="12.5" TextColor="{StaticResource NotifyDismissText}" />
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnDismissTapped" />
+                        </Border.GestureRecognizers>
+                    </Border>
+                </HorizontalStackLayout>
+            </VerticalStackLayout>
+
+            <Grid Grid.Column="2" HeightRequest="28" WidthRequest="28" VerticalOptions="Start">
+                <Path Style="{StaticResource LineClose}" HeightRequest="15" WidthRequest="15"
+                      Stroke="{StaticResource NotifyClose}" HorizontalOptions="Center" VerticalOptions="Center" />
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnDismissTapped" />
+                </Grid.GestureRecognizers>
+            </Grid>
+        </Grid>
+    </Border>
+</ContentView>

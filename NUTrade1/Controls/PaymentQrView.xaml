@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView
+    x:Class="NUTrade1.Controls.PaymentQrView"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:controls="clr-namespace:NUTrade1.Controls"
+    x:Name="Root">
+
+    <!-- The payment QR, plus the two ways to get it into a payment app on this same phone. -->
+    <VerticalStackLayout Spacing="12">
+
+        <Border StrokeThickness="1" Stroke="{StaticResource CardBorder}" StrokeShape="RoundRectangle 16"
+                HeightRequest="230" WidthRequest="230" HorizontalOptions="Center"
+                BackgroundColor="{StaticResource White}">
+            <Grid>
+                <Image x:Name="QrImage" Aspect="AspectFit" Margin="6"
+                       SemanticProperties.Description="QR Ph payment code" />
+                <!-- No code and none coming (a failed attempt): say so, rather than pulse forever. -->
+                <VerticalStackLayout x:Name="Placeholder" Spacing="8" HorizontalOptions="Center" VerticalOptions="Center">
+                    <Path Style="{StaticResource IconRefresh}" HeightRequest="30" WidthRequest="30"
+                          HorizontalOptions="Center" Fill="{StaticResource InkMuted}" />
+                    <Label Text="QR code loads here" Style="{StaticResource MetaText}" HorizontalOptions="Center" />
+                </VerticalStackLayout>
+                <!-- A code on its way: the QR in bones, opaque over any old code being replaced. -->
+                <controls:QrSkeleton x:Name="LoadingBones" BackgroundColor="{StaticResource White}" />
+            </Grid>
+        </Border>
+
+        <Grid x:Name="Actions" ColumnDefinitions="*,*" ColumnSpacing="10" IsVisible="False">
+            <Button Grid.Column="0" x:Name="SaveButton" Text="Save QR" Style="{StaticResource GhostButton}"
+                    Clicked="OnSaveClicked"
+                    SemanticProperties.Hint="Saves the QR code to your photos so a payment app can upload it" />
+            <Button Grid.Column="1" x:Name="ShareButton" Text="Share" Style="{StaticResource GhostButton}"
+                    Clicked="OnShareClicked"
+                    SemanticProperties.Hint="Sends the QR code to another app" />
+        </Grid>
+
+        <Label x:Name="Hint" Style="{StaticResource MetaText}" HorizontalTextAlignment="Center" IsVisible="False"
+               Text="Paying on this phone? Save the QR, then in GCash or Maya tap Pay QR › Upload QR and pick it from your photos." />
+    </VerticalStackLayout>
+</ContentView>

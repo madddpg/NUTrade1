@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="NUTrade1/NUTrade1.csproj" />
+  <Project Path="NUTrade1.Core/NUTrade1.Core.csproj" />
+  <Project Path="NUTrade1.Tests/NUTrade1.Tests.csproj" />
+</Solution>

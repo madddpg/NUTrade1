@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<views:AppContentPage
+    x:Class="NUTrade1.Views.ReviewListingPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:views="clr-namespace:NUTrade1.Views"
+    xmlns:controls="clr-namespace:NUTrade1.Controls"
+    xmlns:vm="clr-namespace:NUTrade1.ViewModels"
+    x:DataType="vm:ReviewListingViewModel"
+    Title="Review Listing">
+
+    <Grid RowDefinitions="Auto,Auto,*">
+
+        <controls:TopBar Grid.Row="0" />
+        <controls:BackLink Grid.Row="1" />
+
+        <ScrollView Grid.Row="2">
+            <VerticalStackLayout Padding="20,0,20,120" Spacing="14">
+
+                <VerticalStackLayout Spacing="2">
+                    <Label Text="Review Listing" Style="{StaticResource ScreenTitle}" FontSize="20" />
+                    <Label Text="Double-check everything before going live" Style="{StaticResource ScreenSubtitle}" />
+                </VerticalStackLayout>
+
+                <!-- The listing as a buyer will see it -->
+                <Border Style="{StaticResource Card}" Padding="0">
+                    <VerticalStackLayout Spacing="0">
+                        <controls:PhotoCarousel HeightRequest="200" Margin="5,5,5,0" Photos="{Binding Preview.Photos}"
+                                                PhotoTappedCommand="{Binding OpenPhotoCommand}" />
+
+                        <VerticalStackLayout Padding="16,14,16,16" Spacing="10">
+                            <HorizontalStackLayout Spacing="6">
+                                <Label FontFamily="InterRegular" FontSize="12" TextColor="{StaticResource InkMuted}"
+                                       Text="{Binding Preview.CategoryLabel}" />
+                                <Label Text="•" FontSize="12" TextColor="{StaticResource InkMuted}" />
+                                <Label FontFamily="InterMedium" FontSize="12" TextColor="{StaticResource NuGold}"
+                                       Text="{Binding Preview.Condition, Converter={StaticResource EnumDisplay}}" />
+                            </HorizontalStackLayout>
+
+                            <Label Text="{Binding Preview.Title}" FontFamily="InterBold" FontSize="18"
+                                   TextColor="{StaticResource Ink}" />
+
+                            <Label Text="{Binding Preview.Description}" FontFamily="InterRegular" FontSize="13" LineHeight="1.3"
+                                   TextColor="#3F4A5E" IsVisible="{Binding Preview.Description, Converter={StaticResource HasValue}}" />
+
+                            <Grid ColumnDefinitions="Auto,Auto" ColumnSpacing="28">
+                                <VerticalStackLayout Grid.Column="0" Spacing="1">
+                                    <Label Text="STARTING BID" FontFamily="InterMedium" FontSize="9.5" CharacterSpacing="0.3"
+                                           TextColor="{StaticResource InkMuted}" />
+                                    <Label Text="{Binding StartingBidDisplay}" FontFamily="InterBold" FontSize="19"
+                                           TextColor="{StaticResource Ink}" />
+                                </VerticalStackLayout>
+                                <VerticalStackLayout Grid.Column="1" Spacing="1">
+                                    <Label Text="BID INCREMENT" FontFamily="InterMedium" FontSize="9.5" CharacterSpacing="0.3"
+                                           TextColor="{StaticResource InkMuted}" />
+                                    <Label Text="{Binding IncrementDisplay}" FontFamily="InterBold" FontSize="19"
+                                           TextColor="{StaticResource Ink}" />
+                                </VerticalStackLayout>
+                            </Grid>
+
+                            <HorizontalStackLayout Spacing="5">
+                                <Path Style="{StaticResource IconMapMarker}" HeightRequest="13" WidthRequest="13"
+                                      Fill="{StaticResource Ink}" VerticalOptions="Center" />
+                                <Label Text="{Binding Preview.MeetupLabel}" FontFamily="InterSemiBold" FontSize="11.5"
+                                       CharacterSpacing="0.3" TextTransform="Uppercase"
+                                       TextColor="{StaticResource Ink}" VerticalOptions="Center" />
+                            </HorizontalStackLayout>
+                        </VerticalStackLayout>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- What posting costs, and how it's paid -->
+                <Border Style="{StaticResource Card}" Padding="16">
+                    <VerticalStackLayout Spacing="12">
+                        <Label Text="LISTING DETAILS" FontFamily="InterBold" FontSize="11" CharacterSpacing="0.8"
+                               TextColor="{StaticResource NuGold}" />
+                        <Grid ColumnDefinitions="*,Auto">
+                            <Label Grid.Column="0" Text="Package" FontFamily="InterRegular" FontSize="13"
+                                   TextColor="{StaticResource InkMuted}" />
+                            <Label Grid.Column="1" Text="{Binding PackageDisplay}" FontFamily="InterSemiBold" FontSize="13"
+                                   TextColor="{StaticResource Ink}" />
+                        </Grid>
+                        <Grid ColumnDefinitions="*,Auto">
+                            <Label Grid.Column="0" Text="Payment" FontFamily="InterRegular" FontSize="13"
+                                   TextColor="{StaticResource InkMuted}" />
+                            <Label Grid.Column="1" Text="{Binding PaymentDisplay}" FontFamily="InterSemiBold" FontSize="13"
+                                   TextColor="{StaticResource NuGold}" />
+                        </Grid>
+                        <Label Text="An admin approves every listing before it goes on the campus feed. The 24-hour auction starts when it's approved."
+                               Style="{StaticResource MetaText}" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <Button Text="Post Listing" Style="{StaticResource GoldButton}" FontSize="15" Margin="0,8,0,0"
+                        Command="{Binding PostCommand}" IsEnabled="{Binding IsNotBusy}" />
+                <Button Text="Edit details" Style="{StaticResource GhostButton}"
+                        Command="{Binding EditCommand}" IsEnabled="{Binding IsNotBusy}" />
+                <controls:LoadingDots IsRunning="{Binding IsBusy}" Caption="Uploading photos…" />
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <controls:BottomNavBar Grid.Row="2" Active="Post" VerticalOptions="End" />
+
+        <controls:NotificationHost Grid.Row="0" Grid.RowSpan="3" />
+        <controls:ToastHost Grid.Row="0" Grid.RowSpan="3" />
+    </Grid>
+
+</views:AppContentPage>

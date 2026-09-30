@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<views:AppContentPage
+    x:Class="NUTrade1.Views.WelcomePage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:controls="clr-namespace:NUTrade1.Controls"
+    xmlns:views="clr-namespace:NUTrade1.Views"
+    xmlns:vm="clr-namespace:NUTrade1.ViewModels"
+    x:DataType="vm:WelcomeViewModel"
+    Shell.NavBarIsVisible="False"
+    BackgroundColor="{StaticResource White}"
+    Background="{StaticResource White}"
+    Title="Welcome">
+
+    <Grid RowDefinitions="*,Auto">
+
+        <!-- The navy-to-white wash from the mockup, across the top of the screen -->
+        <Image Grid.Row="0" Grid.RowSpan="2" Source="welcome_bg.png" Aspect="AspectFill"
+               VerticalOptions="Start" HeightRequest="566" />
+
+        <VerticalStackLayout Grid.Row="1" Padding="30,0,30,34" Spacing="10">
+
+            <HorizontalStackLayout Spacing="8">
+                <Border HeightRequest="40" WidthRequest="40" StrokeThickness="1" Stroke="#D6DCE6"
+                        StrokeShape="RoundRectangle 999" BackgroundColor="{StaticResource White}" VerticalOptions="Center">
+                    <Image Source="nutrade_mark.png" HeightRequest="26" WidthRequest="26" Aspect="AspectFit"
+                           HorizontalOptions="Center" VerticalOptions="Center" />
+                </Border>
+                <Label VerticalOptions="Center">
+                    <Label.FormattedText>
+                        <FormattedString>
+                            <Span Text="NU" FontFamily="InterExtraBold" FontSize="23" TextColor="{StaticResource NuNavy}" />
+                            <Span Text="Trade" FontFamily="InterExtraBold" FontSize="23" TextColor="{StaticResource NuGold}" />
+                        </FormattedString>
+                    </Label.FormattedText>
+                </Label>
+            </HorizontalStackLayout>
+
+            <Label>
+                <Label.FormattedText>
+                    <FormattedString>
+                        <Span Text="Find It. Bid It. " FontFamily="InterExtraBold" FontSize="27" TextColor="{StaticResource Black}" />
+                        <Span Text="Own It." FontFamily="InterExtraBold" FontSize="27" TextColor="{StaticResource WelcomeBlue}" />
+                    </FormattedString>
+                </Label.FormattedText>
+            </Label>
+
+            <!-- Sign Up / Sign In pill -->
+            <Border StrokeThickness="1" Stroke="#E3E7EE" StrokeShape="RoundRectangle 999" BackgroundColor="{StaticResource White}"
+                    Padding="4" HeightRequest="54" Margin="0,48,0,0">
+                <Grid ColumnDefinitions="*,*">
+                    <Border Grid.Column="0" BackgroundColor="{StaticResource WelcomeNavy}" StrokeThickness="0" StrokeShape="RoundRectangle 999">
+                        <Label Text="Sign Up" FontFamily="InterBold" FontSize="15" TextColor="{StaticResource White}"
+                               HorizontalOptions="Center" VerticalOptions="Center" />
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding SignUpCommand}" />
+                        </Border.GestureRecognizers>
+                    </Border>
+                    <Grid Grid.Column="1" BackgroundColor="Transparent">
+                        <Label Text="Sign In" FontFamily="InterBold" FontSize="15" TextColor="{StaticResource WelcomeNavy}"
+                               HorizontalOptions="Center" VerticalOptions="Center" />
+                        <Grid.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding SignInCommand}" />
+                        </Grid.GestureRecognizers>
+                    </Grid>
+                </Grid>
+            </Border>
+        </VerticalStackLayout>
+        <controls:ToastHost Grid.Row="0" Grid.RowSpan="2" />
+    </Grid>
+
+</views:AppContentPage>

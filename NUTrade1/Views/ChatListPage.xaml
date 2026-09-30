@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<views:AppContentPage
+    x:Class="NUTrade1.Views.ChatListPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:views="clr-namespace:NUTrade1.Views"
+    xmlns:controls="clr-namespace:NUTrade1.Controls"
+    xmlns:vm="clr-namespace:NUTrade1.ViewModels"
+    x:Name="Page"
+    x:DataType="vm:ChatListViewModel"
+    Title="Chat">
+
+    <ContentPage.Resources>
+        <!-- One conversation row in bones: avatar, name, item title, divider. -->
+        <ControlTemplate x:Key="ChatRowBones">
+            <VerticalStackLayout Spacing="0">
+                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12" Padding="0,12">
+                    <Border Grid.Column="0" Style="{StaticResource BoneRound}" HeightRequest="40" WidthRequest="40" />
+                    <VerticalStackLayout Grid.Column="1" Spacing="7" VerticalOptions="Center">
+                        <Border Style="{StaticResource Bone}" HeightRequest="13" WidthRequest="110" />
+                        <Border Style="{StaticResource Bone}" HeightRequest="10" WidthRequest="170" />
+                    </VerticalStackLayout>
+                </Grid>
+                <BoxView HeightRequest="1" Color="{StaticResource CardBorder}" />
+            </VerticalStackLayout>
+        </ControlTemplate>
+    </ContentPage.Resources>
+
+    <Grid RowDefinitions="Auto,Auto,*">
+
+        <controls:TopBar Grid.Row="0" />
+
+        <VerticalStackLayout Grid.Row="1" Padding="20,4,20,12" Spacing="2">
+            <Label Text="Messages" Style="{StaticResource ScreenTitle}" FontSize="20" />
+            <Label Text="Keep every meetup and bid in one place." FontFamily="InterRegular" FontSize="11.5"
+                   TextColor="{StaticResource InkMuted}" />
+        </VerticalStackLayout>
+
+        <!-- One tall card, as in the mockup, running down to the nav bar -->
+        <Border Grid.Row="2" Style="{StaticResource Card}" Padding="14,6" Margin="20,0,20,96">
+            <ScrollView>
+                <Grid>
+                    <controls:Skeleton IsActive="{Binding IsLoading}">
+                        <VerticalStackLayout>
+                            <ContentView ControlTemplate="{StaticResource ChatRowBones}" />
+                            <ContentView ControlTemplate="{StaticResource ChatRowBones}" />
+                            <ContentView ControlTemplate="{StaticResource ChatRowBones}" />
+                            <ContentView ControlTemplate="{StaticResource ChatRowBones}" />
+                            <ContentView ControlTemplate="{StaticResource ChatRowBones}" />
+                        </VerticalStackLayout>
+                    </controls:Skeleton>
+
+                    <VerticalStackLayout BindableLayout.ItemsSource="{Binding Chats}" IsVisible="{Binding HasChats}">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="vm:ChatRowViewModel">
+                                <VerticalStackLayout Spacing="0">
+                                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12" Padding="0,12">
+                                        <Grid.GestureRecognizers>
+                                            <TapGestureRecognizer
+                                                Command="{Binding Source={x:Reference Page}, Path=BindingContext.OpenChatCommand}"
+                                                CommandParameter="{Binding .}" />
+                                        </Grid.GestureRecognizers>
+                                        <Border Grid.Column="0" HeightRequest="40" WidthRequest="40" StrokeThickness="0"
+                                                StrokeShape="RoundRectangle 999" BackgroundColor="{StaticResource NuGold}" />
+                                        <VerticalStackLayout Grid.Column="1" Spacing="1" VerticalOptions="Center">
+                                            <Label Text="{Binding PartnerName}" FontFamily="InterBold" FontSize="14"
+                                                   TextColor="{StaticResource Ink}" />
+                                            <Label Text="{Binding ListingTitle}" FontFamily="InterRegular" FontSize="11"
+                                                   TextColor="#969FB0" MaxLines="1" LineBreakMode="TailTruncation" />
+                                        </VerticalStackLayout>
+                                    </Grid>
+                                    <BoxView HeightRequest="1" Color="{StaticResource CardBorder}" />
+                                </VerticalStackLayout>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Spacing="8" Padding="10,60" IsVisible="{Binding ShowEmptyState}">
+                        <Path Style="{StaticResource NavChat}" HeightRequest="30" WidthRequest="30" HorizontalOptions="Center"
+                              Stroke="{StaticResource InkMuted}" />
+                        <Label Text="No conversations yet" Style="{StaticResource CardTitle}" HorizontalOptions="Center" />
+                        <Label Text="When an auction is won, a chat opens here so you can agree on a campus meetup."
+                               Style="{StaticResource ScreenSubtitle}" HorizontalTextAlignment="Center" />
+                    </VerticalStackLayout>
+                </Grid>
+            </ScrollView>
+        </Border>
+
+        <controls:BottomNavBar Grid.Row="2" Active="Chat" VerticalOptions="End" />
+
+        <!-- In-app notifications (posted, won, paid) draw over the page -->
+        <controls:NotificationHost Grid.Row="0" Grid.RowSpan="3" />
+        <controls:ToastHost Grid.Row="0" Grid.RowSpan="3" />
+    </Grid>
+
+</views:AppContentPage>

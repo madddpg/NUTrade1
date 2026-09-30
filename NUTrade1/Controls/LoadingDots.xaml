@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView
+    x:Class="NUTrade1.Controls.LoadingDots"
+    x:Name="Self"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    HorizontalOptions="Center"
+    IsVisible="False">
+
+    <VerticalStackLayout Spacing="9" HorizontalOptions="Center">
+        <!-- Three dots riding a wave, gold in the middle. Reads as NUTrade rather than as
+             the platform's default spinner, and unlike a spinner it keeps moving visibly
+             at small sizes. -->
+        <HorizontalStackLayout Spacing="7" HorizontalOptions="Center">
+            <Ellipse x:Name="Dot1" HeightRequest="9" WidthRequest="9" Fill="{StaticResource NuNavyBrush}" />
+            <Ellipse x:Name="Dot2" HeightRequest="9" WidthRequest="9" Fill="{StaticResource NuGoldBrush}" />
+            <Ellipse x:Name="Dot3" HeightRequest="9" WidthRequest="9" Fill="{StaticResource NuNavyBrush}" />
+        </HorizontalStackLayout>
+
+        <Label x:Name="CaptionLabel" FontFamily="InterMedium" FontSize="12.5"
+               TextColor="{StaticResource InkMuted}" HorizontalOptions="Center"
+               Text="{Binding Caption, Source={x:Reference Self}}"
+               IsVisible="{Binding HasCaption, Source={x:Reference Self}}" />
+    </VerticalStackLayout>
+</ContentView>

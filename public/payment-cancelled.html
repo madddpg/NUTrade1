@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Payment cancelled · NUTrade</title>
+<style>
+  :root { --navy:#1C2C58; --gold:#E8A317; --ink:#41496A; --bg:#F4F6FB; --card:#FFFFFF; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#0E1630; --card:#17224A; --ink:#C4CCE6; }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin:0; min-height:100dvh; display:grid; place-items:center; padding:24px;
+    background:var(--bg); color:var(--navy);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  .card {
+    background:var(--card); border-radius:20px; padding:36px 28px; max-width:400px; width:100%;
+    text-align:center; box-shadow:0 12px 40px rgba(28,44,88,.10);
+  }
+  .tick {
+    width:64px; height:64px; margin:0 auto 20px; border-radius:50%;
+    background:#FEECEC; display:grid; place-items:center;
+  }
+  .tick svg { width:30px; height:30px; }
+  h1 { margin:0 0 10px; font-size:22px; }
+  p { margin:0 0 8px; font-size:15px; line-height:1.55; color:var(--ink); }
+  .ref {
+    display:inline-block; margin-top:18px; padding:8px 14px; border-radius:999px;
+    background:rgba(232,163,23,.14); color:var(--gold); font-weight:700;
+    font-size:13px; letter-spacing:.04em;
+  }
+  .hint { margin-top:22px; font-size:13px; color:#8A93AD; }
+</style>
+</head>
+<body>
+  <main class="card">
+    <div class="tick" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="3"
+           stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </div>
+    <h1>Payment cancelled</h1>
+    <p>Nothing was charged.</p>
+    <p>Your bid is still reserved until the payment window closes — reopen NUTrade to try again.</p>
+    <span class="ref" id="ref" hidden></span>
+    <p class="hint">You can close this tab.</p>
+  </main>
+<script>
+  // PayMongo appends the order reference we handed it, so the student can quote it.
+  var ref = new URLSearchParams(location.search).get("ref");
+  if (ref) { var el = document.getElementById("ref"); el.textContent = ref; el.hidden = false; }
+</script>
+</body>
+</html>

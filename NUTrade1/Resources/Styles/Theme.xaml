@@ -1,0 +1,294 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:conv="clr-namespace:NUTrade1.Converters">
+
+    <!-- ============================================================
+         NUTrade component styles — matches the mockup design system.
+         Merge AFTER Colors.xaml, Icons.xaml and Styles.xaml.
+         ============================================================ -->
+
+    <!-- Converters (shared instances) -->
+    <conv:EnumDisplayConverter x:Key="EnumDisplay" />
+    <conv:InitialsConverter x:Key="Initials" />
+    <conv:CampusHubProgramConverter x:Key="HubProgram" />
+    <conv:TimeAgoConverter x:Key="TimeAgo" />
+    <conv:InverseBoolConverter x:Key="InvertBool" />
+    <conv:HasValueConverter x:Key="HasValue" />
+    <conv:EnumEqualsConverter x:Key="EnumEquals" />
+    <conv:IsNullConverter x:Key="IsNull" />
+    <conv:FirstOrDefaultConverter x:Key="FirstOrDefault" />
+    <conv:CentavosConverter x:Key="Centavos" />
+    <conv:CountToBoolConverter x:Key="CountToBool" />
+    <conv:ListingStatusTextConverter x:Key="ListingStatusText" />
+    <conv:ListingStatusColorConverter x:Key="ListingStatusColor"
+        Live="{StaticResource Success}" LiveDark="{StaticResource SuccessDark}"
+        Waiting="{StaticResource Warning}" WaitingDark="{StaticResource WarningDark}"
+        Closed="{StaticResource InkMuted}" ClosedDark="{StaticResource InkMutedDark}" />
+
+    <conv:BoolToObjectConverter x:Key="ChipBgSel"
+        TrueObject="{AppThemeBinding Light={StaticResource NuNavy}, Dark={StaticResource NuNavyLight}}"
+        FalseObject="{AppThemeBinding Light={StaticResource ChipBg}, Dark={StaticResource ChipBgDark}}" />
+    <conv:BoolToObjectConverter x:Key="ChipStrokeSel"
+        TrueObject="{AppThemeBinding Light={StaticResource NuNavy}, Dark={StaticResource NuNavyLight}}"
+        FalseObject="{AppThemeBinding Light={StaticResource ChipBorder}, Dark={StaticResource ChipBorderDark}}" />
+    <conv:BoolToObjectConverter x:Key="ChipTextSel"
+        TrueObject="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource NuNavy}}"
+        FalseObject="{AppThemeBinding Light={StaticResource ChipText}, Dark={StaticResource ChipTextDark}}" />
+
+    <conv:BoolToObjectConverter x:Key="CreditColor"
+        TrueObject="{AppThemeBinding Light={StaticResource Success}, Dark={StaticResource SuccessDark}}"
+        FalseObject="{AppThemeBinding Light={StaticResource Ink}, Dark={StaticResource InkDark}}" />
+
+    <!-- Icon (filled, Material style) -->
+    <Style TargetType="Path" x:Key="Icon">
+        <Setter Property="Aspect" Value="Uniform" />
+        <Setter Property="HeightRequest" Value="22" />
+        <Setter Property="WidthRequest" Value="22" />
+        <Setter Property="Fill" Value="{AppThemeBinding Light={StaticResource Ink}, Dark={StaticResource InkDark}}" />
+    </Style>
+
+    <!-- Icon (outline / line style, matches the mockup nav bar) -->
+    <Style TargetType="Path" x:Key="IconLine">
+        <Setter Property="Aspect" Value="Uniform" />
+        <Setter Property="HeightRequest" Value="22" />
+        <Setter Property="WidthRequest" Value="22" />
+        <Setter Property="Fill" Value="Transparent" />
+        <Setter Property="Stroke" Value="{AppThemeBinding Light={StaticResource Ink}, Dark={StaticResource InkDark}}" />
+        <Setter Property="StrokeThickness" Value="2" />
+        <Setter Property="StrokeLineCap" Value="Round" />
+        <Setter Property="StrokeLineJoin" Value="Round" />
+    </Style>
+
+    <!-- Typography (mockup scale) -->
+    <Style TargetType="Label" x:Key="ScreenTitle">
+        <Setter Property="FontFamily" Value="InterBold" />
+        <Setter Property="FontSize" Value="22" />
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource Ink}, Dark={StaticResource InkDark}}" />
+    </Style>
+
+    <Style TargetType="Label" x:Key="ScreenSubtitle" BasedOn="{StaticResource MutedText}">
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="TextColor" Value="{StaticResource InkMuted}" />
+        <Setter Property="LineHeight" Value="1.35" />
+    </Style>
+
+    <Style TargetType="Label" x:Key="CardTitle">
+        <Setter Property="FontFamily" Value="InterBold" />
+        <Setter Property="FontSize" Value="15" />
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource Ink}, Dark={StaticResource InkDark}}" />
+    </Style>
+
+    <Style TargetType="Label" x:Key="Kicker">
+        <Setter Property="FontFamily" Value="InterSemiBold" />
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="CharacterSpacing" Value="0.8" />
+        <Setter Property="TextTransform" Value="Uppercase" />
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource InkMuted}, Dark={StaticResource InkMutedDark}}" />
+    </Style>
+
+    <Style TargetType="Label" x:Key="FieldLabel">
+        <Setter Property="FontFamily" Value="InterMedium" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="TextColor" Value="{StaticResource NuNavy}" />
+    </Style>
+
+    <Style TargetType="Label" x:Key="MetaText">
+        <Setter Property="FontFamily" Value="InterRegular" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource InkMuted}, Dark={StaticResource InkMutedDark}}" />
+    </Style>
+
+    <!-- Cards -->
+    <Style TargetType="Border" x:Key="Card">
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource CardBg}, Dark={StaticResource CardBgDark}}" />
+        <Setter Property="Stroke" Value="{AppThemeBinding Light={StaticResource CardBorder}, Dark={StaticResource CardBorderDark}}" />
+        <Setter Property="StrokeThickness" Value="1" />
+        <Setter Property="StrokeShape" Value="RoundRectangle 18" />
+        <Setter Property="Padding" Value="16" />
+        <Setter Property="Shadow">
+            <Shadow Brush="{StaticResource CardShadow}" Offset="0,6" Radius="20" Opacity="1" />
+        </Setter>
+    </Style>
+
+    <Style TargetType="Border" x:Key="HeroCard">
+        <Setter Property="Background" Value="{StaticResource HeroBrush}" />
+        <Setter Property="StrokeThickness" Value="0" />
+        <Setter Property="StrokeShape" Value="RoundRectangle 22" />
+        <Setter Property="Padding" Value="22" />
+        <Setter Property="Shadow">
+            <Shadow Brush="{StaticResource NuNavy}" Offset="0,14" Radius="28" Opacity="0.28" />
+        </Setter>
+    </Style>
+
+    <Style TargetType="Border" x:Key="StatCard">
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource CardBg}, Dark={StaticResource CardBgDark}}" />
+        <Setter Property="Stroke" Value="{AppThemeBinding Light={StaticResource CardBorder}, Dark={StaticResource CardBorderDark}}" />
+        <Setter Property="StrokeThickness" Value="1" />
+        <Setter Property="StrokeShape" Value="RoundRectangle 18" />
+        <Setter Property="Padding" Value="14,16" />
+        <Setter Property="Shadow">
+            <Shadow Brush="{StaticResource CardShadow}" Offset="0,6" Radius="18" Opacity="1" />
+        </Setter>
+    </Style>
+
+    <!-- Badges -->
+    <Style TargetType="Border" x:Key="GoldBadge">
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource GoldSoft}, Dark={StaticResource GoldSoftDark}}" />
+        <Setter Property="StrokeThickness" Value="0" />
+        <Setter Property="StrokeShape" Value="RoundRectangle 999" />
+        <Setter Property="Padding" Value="10,4" />
+        <Setter Property="HorizontalOptions" Value="Start" />
+    </Style>
+
+    <Style TargetType="Label" x:Key="GoldBadgeText">
+        <Setter Property="FontFamily" Value="InterSemiBold" />
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource GoldSoftText}, Dark={StaticResource GoldSoftTextDark}}" />
+    </Style>
+
+    <Style TargetType="Border" x:Key="OverlayBadge">
+        <Setter Property="BackgroundColor" Value="{StaticResource OverlayDark}" />
+        <Setter Property="StrokeThickness" Value="0" />
+        <Setter Property="StrokeShape" Value="RoundRectangle 999" />
+        <Setter Property="Padding" Value="9,4" />
+    </Style>
+
+    <Style TargetType="Label" x:Key="OverlayBadgeText">
+        <Setter Property="FontFamily" Value="InterSemiBold" />
+        <Setter Property="FontSize" Value="10.5" />
+        <Setter Property="TextColor" Value="{StaticResource White}" />
+    </Style>
+
+    <Style TargetType="Border" x:Key="SoftPill">
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource PageBottom}, Dark={StaticResource ChipBgDark}}" />
+        <Setter Property="StrokeThickness" Value="0" />
+        <Setter Property="StrokeShape" Value="RoundRectangle 999" />
+        <Setter Property="Padding" Value="10,5" />
+        <Setter Property="HorizontalOptions" Value="Start" />
+    </Style>
+
+    <!-- Buttons -->
+    <Style TargetType="Button" x:Key="GoldButton">
+        <Setter Property="Background" Value="{StaticResource GoldBrush}" />
+        <Setter Property="TextColor" Value="{StaticResource NuNavy}" />
+        <Setter Property="FontFamily" Value="InterSemiBold" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="CornerRadius" Value="999" />
+        <Setter Property="HeightRequest" Value="46" />
+        <Setter Property="Padding" Value="18,0" />
+    </Style>
+
+    <Style TargetType="Button" x:Key="NavyButton">
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource NuNavy}, Dark={StaticResource NuNavyLight}}" />
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource NuNavy}}" />
+        <Setter Property="FontFamily" Value="InterSemiBold" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="CornerRadius" Value="999" />
+        <Setter Property="HeightRequest" Value="46" />
+        <Setter Property="Padding" Value="18,0" />
+    </Style>
+
+    <Style TargetType="Button" x:Key="GhostButton">
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource CardBg}, Dark={StaticResource CardBgDark}}" />
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource Ink}, Dark={StaticResource InkDark}}" />
+        <Setter Property="BorderColor" Value="{AppThemeBinding Light={StaticResource CardBorder}, Dark={StaticResource CardBorderDark}}" />
+        <Setter Property="BorderWidth" Value="1" />
+        <Setter Property="FontFamily" Value="InterSemiBold" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="CornerRadius" Value="999" />
+        <Setter Property="HeightRequest" Value="46" />
+        <Setter Property="Padding" Value="18,0" />
+    </Style>
+
+    <!-- Small gold pill button, e.g. top-bar "+ Post", "+ New" -->
+    <Style TargetType="Button" x:Key="GoldPillButton">
+        <Setter Property="Background" Value="{StaticResource GoldBrush}" />
+        <Setter Property="TextColor" Value="{StaticResource NuNavy}" />
+        <Setter Property="FontFamily" Value="InterSemiBold" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="CornerRadius" Value="999" />
+        <Setter Property="HeightRequest" Value="38" />
+        <Setter Property="Padding" Value="16,0" />
+    </Style>
+
+    <!-- Inputs -->
+    <Style TargetType="Border" x:Key="InputShell">
+        <Setter Property="BackgroundColor" Value="{StaticResource White}" />
+        <Setter Property="Stroke" Value="{AppThemeBinding Light={StaticResource CardBorder}, Dark={StaticResource CardBorderDark}}" />
+        <Setter Property="StrokeThickness" Value="1" />
+        <Setter Property="StrokeShape" Value="RoundRectangle 12" />
+        <Setter Property="Padding" Value="14,0" />
+    </Style>
+
+    <Style TargetType="Entry" x:Key="ShellEntry">
+        <Setter Property="BackgroundColor" Value="Transparent" />
+        <Setter Property="FontFamily" Value="InterRegular" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource Ink}, Dark={StaticResource InkDark}}" />
+        <Setter Property="PlaceholderColor" Value="{AppThemeBinding Light={StaticResource InkMuted}, Dark={StaticResource InkMutedDark}}" />
+        <Setter Property="HeightRequest" Value="42" />
+    </Style>
+
+    <Style TargetType="Editor" x:Key="ShellEditor">
+        <Setter Property="BackgroundColor" Value="Transparent" />
+        <Setter Property="FontFamily" Value="InterRegular" />
+        <Setter Property="FontSize" Value="15" />
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource Ink}, Dark={StaticResource InkDark}}" />
+        <Setter Property="PlaceholderColor" Value="{AppThemeBinding Light={StaticResource InkMuted}, Dark={StaticResource InkMutedDark}}" />
+        <Setter Property="AutoSize" Value="TextChanges" />
+        <Setter Property="MinimumHeightRequest" Value="96" />
+    </Style>
+
+    <!-- Dropdown Picker, styled to sit inside an InputShell border alongside a chevron icon -->
+    <Style TargetType="Picker" x:Key="ShellPicker">
+        <Setter Property="BackgroundColor" Value="Transparent" />
+        <Setter Property="FontFamily" Value="InterRegular" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource Ink}, Dark={StaticResource InkDark}}" />
+        <Setter Property="TitleColor" Value="{AppThemeBinding Light={StaticResource InkMuted}, Dark={StaticResource InkMutedDark}}" />
+        <Setter Property="HeightRequest" Value="42" />
+    </Style>
+
+    <!-- Skeleton bones: see Controls/Skeleton. A bone is one grey block standing in for a
+         line of text, a photo or an avatar; size it where it's used, with WidthRequest for
+         a short line or HorizontalOptions="Fill" for a full one. -->
+    <Style TargetType="Border" x:Key="Bone">
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource SkeletonBone}, Dark={StaticResource SkeletonBoneDark}}" />
+        <Setter Property="StrokeThickness" Value="0" />
+        <Setter Property="StrokeShape" Value="RoundRectangle 6" />
+        <Setter Property="HeightRequest" Value="12" />
+        <Setter Property="HorizontalOptions" Value="Start" />
+    </Style>
+
+    <Style TargetType="Border" x:Key="BoneRound" BasedOn="{StaticResource Bone}">
+        <Setter Property="StrokeShape" Value="RoundRectangle 999" />
+    </Style>
+
+    <!-- On the navy HeroCard, where a light-grey bone would glare: translucent white. -->
+    <Style TargetType="Border" x:Key="BoneOnDark" BasedOn="{StaticResource Bone}">
+        <Setter Property="BackgroundColor" Value="#2EFFFFFF" />
+    </Style>
+
+    <!-- A QR payment card in bones — code, amount, reference, instructions, button — for
+         the payment screens while their order or deposit loads. Use it through a
+         ContentView's ControlTemplate inside a Skeleton. -->
+    <ControlTemplate x:Key="PaymentCardBones">
+        <Border Style="{StaticResource Card}" Padding="18">
+            <VerticalStackLayout Spacing="12">
+                <Border Style="{StaticResource Bone}" HeightRequest="220" WidthRequest="220" HorizontalOptions="Center" StrokeShape="RoundRectangle 16" />
+                <Border Style="{StaticResource Bone}" HeightRequest="24" WidthRequest="110" HorizontalOptions="Center" />
+                <Border Style="{StaticResource Bone}" HeightRequest="10" WidthRequest="90" HorizontalOptions="Center" />
+                <Border Style="{StaticResource Bone}" HeightRequest="10" HorizontalOptions="Fill" />
+                <Border Style="{StaticResource Bone}" HeightRequest="10" WidthRequest="180" HorizontalOptions="Center" />
+                <Border Style="{StaticResource BoneRound}" HeightRequest="46" HorizontalOptions="Fill" Margin="0,4,0,0" />
+            </VerticalStackLayout>
+        </Border>
+    </ControlTemplate>
+
+    <!-- Chips: see Controls/SelectableChip. A templated RadioButton was tried here first
+         but did not reliably respond to taps on all platforms. ChipBgSel / ChipStrokeSel /
+         ChipTextSel (above) are still used for real-bool toggles (Offers segment, Priority pin). -->
+
+</ResourceDictionary>

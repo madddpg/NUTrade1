@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Shell
+    x:Class="NUTrade1.AppShell"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:views="clr-namespace:NUTrade1.Views"
+    Title="NUTrade"
+    FlyoutBehavior="Disabled">
+
+    <!-- Auth gate: shown when signed out or profile is incomplete -->
+    <ShellContent
+        Route="welcome"
+        ContentTemplate="{DataTemplate views:WelcomePage}"
+        FlyoutItemIsVisible="False" />
+
+    <ShellContent
+        Route="login"
+        ContentTemplate="{DataTemplate views:LoginPage}"
+        FlyoutItemIsVisible="False" />
+
+    <ShellContent
+        Route="verifyemail"
+        ContentTemplate="{DataTemplate views:VerifyEmailPage}"
+        FlyoutItemIsVisible="False" />
+
+    <ShellContent
+        Route="profilesetup"
+        ContentTemplate="{DataTemplate views:ProfileSetupPage}"
+        FlyoutItemIsVisible="False" />
+
+    <!-- Main app. Navigation is driven by the custom BottomNavBar, so the
+         native Shell tab bar is hidden (Shell.TabBarIsVisible on the Page style). -->
+    <TabBar Route="main">
+        <Tab Title="Home" Route="feed">
+            <ShellContent ContentTemplate="{DataTemplate views:FeedPage}" />
+        </Tab>
+        <Tab Title="Post" Route="post">
+            <ShellContent ContentTemplate="{DataTemplate views:PostTradePage}" />
+        </Tab>
+        <Tab Title="Offers" Route="offers">
+            <ShellContent ContentTemplate="{DataTemplate views:OffersPage}" />
+        </Tab>
+        <Tab Title="Chat" Route="chats">
+            <ShellContent ContentTemplate="{DataTemplate views:ChatListPage}" />
+        </Tab>
+        <Tab Title="Profile" Route="profile">
+            <ShellContent ContentTemplate="{DataTemplate views:ProfilePage}" />
+        </Tab>
+    </TabBar>
+
+</Shell>

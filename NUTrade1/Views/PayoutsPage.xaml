@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<views:AppContentPage
+    x:Class="NUTrade1.Views.PayoutsPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:views="clr-namespace:NUTrade1.Views"
+    xmlns:controls="clr-namespace:NUTrade1.Controls"
+    xmlns:vm="clr-namespace:NUTrade1.ViewModels"
+    x:DataType="vm:PayoutsViewModel"
+    x:Name="Page"
+    Shell.NavBarIsVisible="False"
+    Title="Payout requests">
+
+    <ContentPage.Resources>
+        <!-- One payout request in bones: student, destination, time, amount, two buttons. -->
+        <ControlTemplate x:Key="PayoutCardBones">
+            <Border Style="{StaticResource Card}" Padding="16">
+                <VerticalStackLayout Spacing="12">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <VerticalStackLayout Grid.Column="0" Spacing="7">
+                            <Border Style="{StaticResource Bone}" HeightRequest="14" WidthRequest="120" />
+                            <Border Style="{StaticResource Bone}" HeightRequest="9" WidthRequest="150" />
+                            <Border Style="{StaticResource Bone}" HeightRequest="9" WidthRequest="60" />
+                        </VerticalStackLayout>
+                        <Border Grid.Column="1" Style="{StaticResource Bone}" HeightRequest="18" WidthRequest="70" VerticalOptions="Center" />
+                    </Grid>
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                        <Border Grid.Column="0" Style="{StaticResource BoneRound}" HeightRequest="46" HorizontalOptions="Fill" />
+                        <Border Grid.Column="1" Style="{StaticResource BoneRound}" HeightRequest="46" HorizontalOptions="Fill" />
+                    </Grid>
+                </VerticalStackLayout>
+            </Border>
+        </ControlTemplate>
+    </ContentPage.Resources>
+
+    <Grid RowDefinitions="Auto,*">
+
+        <controls:DetailBar Grid.Row="0" HeaderTitle="Payout requests" />
+
+        <RefreshView Grid.Row="1" Command="{Binding LoadCommand}" IsRefreshing="{Binding IsRefreshing}">
+            <ScrollView>
+                <VerticalStackLayout Padding="18,10,18,28" Spacing="14">
+
+                    <Label Text="NUTrade doesn't move money itself. Send each one from your own GCash or Maya, then mark it sent."
+                           Style="{StaticResource MetaText}" />
+
+                    <controls:Skeleton IsActive="{Binding IsLoading}">
+                        <VerticalStackLayout Spacing="12">
+                            <ContentView ControlTemplate="{StaticResource PayoutCardBones}" />
+                            <ContentView ControlTemplate="{StaticResource PayoutCardBones}" />
+                            <ContentView ControlTemplate="{StaticResource PayoutCardBones}" />
+                        </VerticalStackLayout>
+                    </controls:Skeleton>
+
+                    <VerticalStackLayout Spacing="12" BindableLayout.ItemsSource="{Binding Pending}" IsVisible="{Binding IsNotLoading}">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="vm:PendingPayoutViewModel">
+                                <Border Style="{StaticResource Card}" Padding="16">
+                                    <VerticalStackLayout Spacing="10">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <VerticalStackLayout Grid.Column="0" Spacing="2">
+                                                <Label Text="{Binding StudentName}" FontFamily="InterBold" FontSize="15"
+                                                       TextColor="{StaticResource Ink}" />
+                                                <Label Text="{Binding DestinationDisplay}" Style="{StaticResource MetaText}" />
+                                                <Label Text="{Binding RequestedAt, Converter={StaticResource TimeAgo}}"
+                                                       Style="{StaticResource MetaText}" />
+                                            </VerticalStackLayout>
+                                            <Label Grid.Column="1" Text="{Binding AmountDisplay}" FontFamily="InterBold"
+                                                   FontSize="19" VerticalOptions="Center" TextColor="{StaticResource Ink}" />
+                                        </Grid>
+
+                                        <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                                            <Button Grid.Column="0" Text="Mark sent" Style="{StaticResource GoldButton}"
+                                                    Command="{Binding Source={x:Reference Page}, Path=BindingContext.MarkPaidCommand}"
+                                                    CommandParameter="{Binding .}" />
+                                            <Button Grid.Column="1" Text="Decline" Style="{StaticResource GhostButton}"
+                                                    Command="{Binding Source={x:Reference Page}, Path=BindingContext.DeclineCommand}"
+                                                    CommandParameter="{Binding .}" />
+                                        </Grid>
+                                    </VerticalStackLayout>
+                                </Border>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Spacing="8" Margin="0,30,0,0" IsVisible="{Binding ShowEmptyState}">
+                        <Path Style="{StaticResource LineCheck}" HeightRequest="30" WidthRequest="30"
+                              HorizontalOptions="Center" Stroke="{StaticResource InkMuted}" StrokeThickness="2" />
+                        <Label Text="All caught up — nobody is waiting to be paid."
+                               Style="{StaticResource MetaText}" HorizontalTextAlignment="Center" />
+                    </VerticalStackLayout>
+
+                </VerticalStackLayout>
+            </ScrollView>
+        </RefreshView>
+
+        <controls:ToastHost Grid.Row="0" Grid.RowSpan="2" />
+    </Grid>
+
+</views:AppContentPage>

@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<views:AppContentPage
+    x:Class="NUTrade1.Views.WalletPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:views="clr-namespace:NUTrade1.Views"
+    xmlns:controls="clr-namespace:NUTrade1.Controls"
+    xmlns:core="clr-namespace:NUTrade1.Core;assembly=NUTrade1.Core"
+    xmlns:vm="clr-namespace:NUTrade1.ViewModels"
+    x:DataType="vm:WalletViewModel"
+    x:Name="Page"
+    Shell.NavBarIsVisible="False"
+    Title="Wallet">
+
+    <Grid RowDefinitions="Auto,*">
+
+        <controls:DetailBar Grid.Row="0" HeaderTitle="Wallet" />
+
+        <RefreshView Grid.Row="1" Command="{Binding LoadCommand}" IsRefreshing="{Binding IsRefreshing}">
+            <ScrollView>
+                <Grid>
+
+                <!-- The wallet in bones: balance card, then a few activity rows. -->
+                <controls:Skeleton IsActive="{Binding IsLoading}">
+                    <VerticalStackLayout Padding="18,10,18,28" Spacing="16">
+                        <Border Style="{StaticResource Card}" Padding="20">
+                            <VerticalStackLayout Spacing="10">
+                                <Border Style="{StaticResource Bone}" HeightRequest="10" WidthRequest="120" />
+                                <Border Style="{StaticResource Bone}" HeightRequest="34" WidthRequest="150" />
+                                <Border Style="{StaticResource Bone}" HeightRequest="10" HorizontalOptions="Fill" />
+                                <Border Style="{StaticResource BoneRound}" HeightRequest="46" HorizontalOptions="Fill" Margin="0,8,0,0" />
+                            </VerticalStackLayout>
+                        </Border>
+
+                        <Border Style="{StaticResource Bone}" HeightRequest="14" WidthRequest="70" />
+                        <Border Style="{StaticResource Card}" Padding="14">
+                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                                <VerticalStackLayout Grid.Column="0" Spacing="7">
+                                    <Border Style="{StaticResource Bone}" HeightRequest="13" WidthRequest="120" />
+                                    <Border Style="{StaticResource Bone}" HeightRequest="9" WidthRequest="160" />
+                                    <Border Style="{StaticResource Bone}" HeightRequest="9" WidthRequest="60" />
+                                </VerticalStackLayout>
+                                <Border Grid.Column="1" Style="{StaticResource Bone}" HeightRequest="15" WidthRequest="60" VerticalOptions="Center" />
+                            </Grid>
+                        </Border>
+                        <Border Style="{StaticResource Card}" Padding="14">
+                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                                <VerticalStackLayout Grid.Column="0" Spacing="7">
+                                    <Border Style="{StaticResource Bone}" HeightRequest="13" WidthRequest="100" />
+                                    <Border Style="{StaticResource Bone}" HeightRequest="9" WidthRequest="140" />
+                                    <Border Style="{StaticResource Bone}" HeightRequest="9" WidthRequest="60" />
+                                </VerticalStackLayout>
+                                <Border Grid.Column="1" Style="{StaticResource Bone}" HeightRequest="15" WidthRequest="56" VerticalOptions="Center" />
+                            </Grid>
+                        </Border>
+                        <Border Style="{StaticResource Card}" Padding="14">
+                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                                <VerticalStackLayout Grid.Column="0" Spacing="7">
+                                    <Border Style="{StaticResource Bone}" HeightRequest="13" WidthRequest="130" />
+                                    <Border Style="{StaticResource Bone}" HeightRequest="9" WidthRequest="120" />
+                                    <Border Style="{StaticResource Bone}" HeightRequest="9" WidthRequest="60" />
+                                </VerticalStackLayout>
+                                <Border Grid.Column="1" Style="{StaticResource Bone}" HeightRequest="15" WidthRequest="64" VerticalOptions="Center" />
+                            </Grid>
+                        </Border>
+                    </VerticalStackLayout>
+                </controls:Skeleton>
+
+                <VerticalStackLayout Padding="18,10,18,28" Spacing="16" IsVisible="{Binding IsNotLoading}">
+
+                    <!-- Balance -->
+                    <Border Style="{StaticResource Card}" Padding="20">
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="AVAILABLE BALANCE" Style="{StaticResource Kicker}" />
+                            <Label Text="{Binding BalanceDisplay}" FontFamily="InterBold" FontSize="34"
+                                   TextColor="{StaticResource Ink}" />
+                            <Label Text="{Binding PayoutHint}" Style="{StaticResource MetaText}" Margin="0,4,0,0" />
+
+                            <Button Text="Cash out" Style="{StaticResource GoldButton}" Margin="0,12,0,0"
+                                    Command="{Binding OpenPayoutFormCommand}" IsEnabled="{Binding CanRequestPayout}"
+                                    IsVisible="{Binding IsFormOpen, Converter={StaticResource InvertBool}}" />
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- Payout form -->
+                    <Border Style="{StaticResource Card}" Padding="18" IsVisible="{Binding IsFormOpen}">
+                        <VerticalStackLayout Spacing="13">
+                            <Label Text="Where should we send it?" FontFamily="InterBold" FontSize="15"
+                                   TextColor="{StaticResource Ink}" />
+                            <Label Text="The whole balance goes out in one payment." Style="{StaticResource MetaText}" />
+
+                            <HorizontalStackLayout Spacing="9">
+                                <controls:SelectableChip Text="GCash" Value="GCash"
+                                                         Command="{Binding SelectMethodCommand}"
+                                                         IsSelected="{Binding IsGCash}" />
+                                <controls:SelectableChip Text="Maya" Value="Maya"
+                                                         Command="{Binding SelectMethodCommand}"
+                                                         IsSelected="{Binding IsMaya}" />
+                            </HorizontalStackLayout>
+
+                            <VerticalStackLayout Spacing="5">
+                                <Label Text="Account name" Style="{StaticResource FieldLabel}" FontSize="14" />
+                                <Border Style="{StaticResource InputShell}">
+                                    <Entry Style="{StaticResource ShellEntry}" Text="{Binding AccountName}"
+                                           Placeholder="Name on the account" ReturnType="Next" />
+                                </Border>
+                            </VerticalStackLayout>
+
+                            <VerticalStackLayout Spacing="5">
+                                <Label Text="Mobile number" Style="{StaticResource FieldLabel}" FontSize="14" />
+                                <Border Style="{StaticResource InputShell}">
+                                    <Entry Style="{StaticResource ShellEntry}" Text="{Binding AccountNumber}"
+                                           Placeholder="09XXXXXXXXX" Keyboard="Telephone" MaxLength="13"
+                                           ReturnType="Go" ReturnCommand="{Binding SubmitPayoutCommand}" />
+                                </Border>
+                            </VerticalStackLayout>
+
+                            <Button Text="Request payout" Style="{StaticResource GoldButton}"
+                                    Command="{Binding SubmitPayoutCommand}" IsEnabled="{Binding IsNotBusy}" />
+                            <Button Text="Cancel" Style="{StaticResource GhostButton}"
+                                    Command="{Binding CancelPayoutCommand}" />
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- Payout requests -->
+                    <Label Text="Payouts" FontFamily="InterBold" FontSize="15" TextColor="{StaticResource Ink}"
+                           IsVisible="{Binding HasPayouts}" />
+                    <VerticalStackLayout Spacing="9" BindableLayout.ItemsSource="{Binding Payouts}"
+                                         IsVisible="{Binding HasPayouts}">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="core:PayoutRequest">
+                                <Border Style="{StaticResource Card}" Padding="14">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <VerticalStackLayout Grid.Column="0" Spacing="2">
+                                            <Label Text="{Binding AmountDisplay}" FontFamily="InterSemiBold" FontSize="15"
+                                                   TextColor="{StaticResource Ink}" />
+                                            <Label Text="{Binding StatusDisplay}" Style="{StaticResource MetaText}" />
+                                            <Label Text="{Binding DeclineReason}" Style="{StaticResource MetaText}"
+                                                   IsVisible="{Binding DeclineReason, Converter={StaticResource HasValue}}" />
+                                        </VerticalStackLayout>
+                                        <Label Grid.Column="1" Style="{StaticResource MetaText}" VerticalOptions="Center"
+                                               Text="{Binding CreatedAt, Converter={StaticResource TimeAgo}}" />
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
+
+                    <!-- Ledger -->
+                    <Label Text="Activity" FontFamily="InterBold" FontSize="15" TextColor="{StaticResource Ink}"
+                           IsVisible="{Binding HasLedger}" />
+                    <VerticalStackLayout Spacing="9" BindableLayout.ItemsSource="{Binding Ledger}"
+                                         IsVisible="{Binding HasLedger}">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="core:LedgerEntry">
+                                <Border Style="{StaticResource Card}" Padding="14">
+                                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                                        <VerticalStackLayout Grid.Column="0" Spacing="2">
+                                            <Label Text="{Binding KindDisplay}" FontFamily="InterSemiBold" FontSize="14"
+                                                   TextColor="{StaticResource Ink}" />
+                                            <Label Text="{Binding Note}" Style="{StaticResource MetaText}"
+                                                   IsVisible="{Binding Note, Converter={StaticResource HasValue}}" />
+                                            <Label Text="{Binding CreatedAt, Converter={StaticResource TimeAgo}}"
+                                                   Style="{StaticResource MetaText}" />
+                                        </VerticalStackLayout>
+                                        <Label Grid.Column="1" Text="{Binding AmountDisplay}" FontFamily="InterBold" FontSize="15"
+                                               VerticalOptions="Center"
+                                               TextColor="{Binding IsCredit, Converter={StaticResource CreditColor}}" />
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
+
+                    <Label Text="Nothing here yet. Completed trades and refunds show up as they happen."
+                           Style="{StaticResource MetaText}" HorizontalTextAlignment="Center" Margin="0,20,0,0"
+                           IsVisible="{Binding HasLedger, Converter={StaticResource InvertBool}}" />
+
+                </VerticalStackLayout>
+                </Grid>
+            </ScrollView>
+        </RefreshView>
+
+        <controls:ToastHost Grid.Row="0" Grid.RowSpan="2" />
+    </Grid>
+
+</views:AppContentPage>

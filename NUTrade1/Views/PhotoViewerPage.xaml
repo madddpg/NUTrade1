@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<views:AppContentPage
+    x:Class="NUTrade1.Views.PhotoViewerPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:views="clr-namespace:NUTrade1.Views"
+    xmlns:controls="clr-namespace:NUTrade1.Controls"
+    xmlns:vm="clr-namespace:NUTrade1.ViewModels"
+    x:DataType="vm:PhotoViewerViewModel"
+    Shell.NavBarIsVisible="False"
+    Shell.TabBarIsVisible="False"
+    Background="#0B0F17"
+    Title="{Binding Title}">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <!-- Photos: pinch or double-tap to zoom, drag while zoomed, swipe to move on. -->
+        <CarouselView x:Name="Carousel" Grid.Row="0" Grid.RowSpan="3"
+                      ItemsSource="{Binding Photos}" Position="{Binding Position}"
+                      IsSwipeEnabled="{Binding IsSwipeEnabled}"
+                      IndicatorView="{x:Reference Indicator}"
+                      Loop="False" PeekAreaInsets="0" HorizontalScrollBarVisibility="Never" IsScrollAnimated="False"
+                      PositionChanged="OnPositionChanged">
+            <CarouselView.ItemTemplate>
+                <DataTemplate x:DataType="x:String">
+                    <controls:ZoomableImage Source="{Binding .}" ZoomChanged="OnZoomChanged"
+                                            SemanticProperties.Description="Listing photo"
+                                            SemanticProperties.Hint="Double tap to zoom" />
+                </DataTemplate>
+            </CarouselView.ItemTemplate>
+        </CarouselView>
+
+        <!-- Top: close and "2 / 4" -->
+        <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" Padding="14,14,14,0">
+            <Border Grid.Column="0" BackgroundColor="#66000000" StrokeThickness="0" StrokeShape="RoundRectangle 999"
+                    HeightRequest="40" WidthRequest="40"
+                    SemanticProperties.Description="Close photos">
+                <Path Style="{StaticResource IconClose}" HeightRequest="20" WidthRequest="20"
+                      Fill="{StaticResource White}" HorizontalOptions="Center" VerticalOptions="Center" />
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding CloseCommand}" />
+                </Border.GestureRecognizers>
+            </Border>
+            <Border Grid.Column="1" Style="{StaticResource OverlayBadge}" HorizontalOptions="Center" VerticalOptions="Center"
+                    IsVisible="{Binding HasMany}">
+                <Label Text="{Binding CounterText}" Style="{StaticResource OverlayBadgeText}" FontSize="12" />
+            </Border>
+        </Grid>
+
+        <!-- Desktop arrows: a mouse can't swipe a carousel -->
+        <Border x:Name="PreviousButton" Grid.Row="1" BackgroundColor="#66000000" StrokeThickness="0"
+                StrokeShape="RoundRectangle 999" HeightRequest="44" WidthRequest="44" Margin="14,0"
+                HorizontalOptions="Start" VerticalOptions="Center" IsVisible="False"
+                SemanticProperties.Description="Previous photo">
+            <Path Style="{StaticResource LineChevronLeft}" HeightRequest="20" WidthRequest="20"
+                  Stroke="{StaticResource White}" HorizontalOptions="Center" VerticalOptions="Center" />
+            <Border.GestureRecognizers>
+                <TapGestureRecognizer Command="{Binding PreviousCommand}" />
+            </Border.GestureRecognizers>
+        </Border>
+        <Border x:Name="NextButton" Grid.Row="1" BackgroundColor="#66000000" StrokeThickness="0"
+                StrokeShape="RoundRectangle 999" HeightRequest="44" WidthRequest="44" Margin="14,0"
+                HorizontalOptions="End" VerticalOptions="Center" IsVisible="False"
+                SemanticProperties.Description="Next photo">
+            <Path Style="{StaticResource LineChevronLeft}" HeightRequest="20" WidthRequest="20" Rotation="180"
+                  Stroke="{StaticResource White}" HorizontalOptions="Center" VerticalOptions="Center" />
+            <Border.GestureRecognizers>
+                <TapGestureRecognizer Command="{Binding NextCommand}" />
+            </Border.GestureRecognizers>
+        </Border>
+
+        <VerticalStackLayout Grid.Row="2" Spacing="10" Padding="0,0,0,24" InputTransparent="True">
+            <IndicatorView x:Name="Indicator" HorizontalOptions="Center" IsVisible="{Binding HasMany}"
+                           IndicatorSize="7" IndicatorColor="#66FFFFFF" SelectedIndicatorColor="{StaticResource NuGold}" />
+            <Label Text="Pinch or double-tap to zoom" FontFamily="InterRegular" FontSize="12"
+                   TextColor="#B3FFFFFF" HorizontalOptions="Center" />
+        </VerticalStackLayout>
+    </Grid>
+
+</views:AppContentPage>

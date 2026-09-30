@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<views:AppContentPage
+    x:Class="NUTrade1.Views.OrderPaymentPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:views="clr-namespace:NUTrade1.Views"
+    xmlns:controls="clr-namespace:NUTrade1.Controls"
+    xmlns:vm="clr-namespace:NUTrade1.ViewModels"
+    x:DataType="vm:OrderPaymentViewModel"
+    Title="Pay for your item">
+
+    <Grid RowDefinitions="Auto,Auto,*">
+
+        <controls:TopBar Grid.Row="0" />
+        <controls:BackLink Grid.Row="1" />
+
+        <ScrollView Grid.Row="2">
+            <VerticalStackLayout Padding="20,0,20,40" Spacing="14">
+
+                <VerticalStackLayout Spacing="2">
+                    <Label Text="YOU WON" FontFamily="InterBold" FontSize="11" CharacterSpacing="0.8" TextColor="{StaticResource NuGold}" />
+                    <Label Text="{Binding ItemTitle}" Style="{StaticResource ScreenTitle}" FontSize="20" IsVisible="{Binding IsNotLoading}" />
+                    <Label Text="{Binding StatusText}" Style="{StaticResource ScreenSubtitle}" IsVisible="{Binding IsNotLoading}" />
+                </VerticalStackLayout>
+
+                <!-- The order loading: item and status lines, then the payment card, in bones. -->
+                <controls:Skeleton IsActive="{Binding IsLoading}" Margin="0,-10,0,0">
+                    <VerticalStackLayout Spacing="14">
+                        <VerticalStackLayout Spacing="8">
+                            <Border Style="{StaticResource Bone}" HeightRequest="18" WidthRequest="190" />
+                            <Border Style="{StaticResource Bone}" HeightRequest="11" WidthRequest="240" />
+                        </VerticalStackLayout>
+                        <ContentView ControlTemplate="{StaticResource PaymentCardBones}" />
+                    </VerticalStackLayout>
+                </controls:Skeleton>
+
+                <Border Style="{StaticResource Card}" Padding="18" IsVisible="{Binding IsOpen}">
+                    <VerticalStackLayout Spacing="12" HorizontalOptions="Center">
+                        <Border StrokeThickness="1" Stroke="{StaticResource CardBorder}" StrokeShape="RoundRectangle 16"
+                                HeightRequest="220" WidthRequest="220" BackgroundColor="{StaticResource White}">
+                            <Grid>
+                                <Image Aspect="AspectFit" Source="{Binding QrImageSource}" IsVisible="{Binding HasQrImage}" />
+                                <controls:QrSkeleton IsActive="{Binding IsBusy}" BackgroundColor="{StaticResource White}" />
+                            </Grid>
+                        </Border>
+                        <Label Text="{Binding AmountDisplay}" FontFamily="InterBold" FontSize="26"
+                               TextColor="{StaticResource NuNavy}" HorizontalOptions="Center" />
+                        <Label Text="{Binding Reference, StringFormat='Order {0}'}" Style="{StaticResource MetaText}" HorizontalOptions="Center" />
+                        <Label Text="Scan with any QR Ph banking or e-wallet app. We'll confirm it here automatically."
+                               Style="{StaticResource ScreenSubtitle}" HorizontalTextAlignment="Center" />
+                        <Button Text="Generate a new code" Style="{StaticResource GhostButton}"
+                                Command="{Binding GenerateCommand}" IsEnabled="{Binding IsNotBusy}" />
+                        <Label Text="{Binding ExpiryText}" Style="{StaticResource MetaText}" HorizontalTextAlignment="Center" />
+                    </VerticalStackLayout>
+                </Border>
+
+
+                <Button Text="Open chat with the seller" Style="{StaticResource GoldButton}" Command="{Binding OpenChatCommand}" />
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <controls:NotificationHost Grid.Row="0" Grid.RowSpan="3" />
+        <controls:ToastHost Grid.Row="0" Grid.RowSpan="3" />
+    </Grid>
+
+</views:AppContentPage>

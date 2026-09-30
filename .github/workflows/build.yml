@@ -1,0 +1,56 @@
+name: build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  DOTNET_VERSION: '10.0.x'
+  DOTNET_NOLOGO: 'true'
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 'true'
+
+jobs:
+  test:
+    name: Core + unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - name: Restore
+        run: dotnet restore NUTrade1.Core/NUTrade1.Core.csproj NUTrade1.Tests/NUTrade1.Tests.csproj
+      - name: Test
+        run: dotnet test NUTrade1.Tests/NUTrade1.Tests.csproj --configuration Release
+
+  android:
+    name: Android head
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      - name: Install MAUI Android workload
+        run: dotnet workload install maui-android
+      - name: Build
+        run: dotnet build NUTrade1/NUTrade1.csproj -f net10.0-android --configuration Release
+
+  ios:
+    name: iOS head
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - name: Install MAUI workload
+        run: dotnet workload install maui
+      - name: Build
+        run: dotnet build NUTrade1/NUTrade1.csproj -f net10.0-ios --configuration Release -p:RuntimeIdentifier=ios-arm64

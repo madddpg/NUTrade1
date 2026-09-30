@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView
+    x:Class="NUTrade1.Controls.PhotoCarousel"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    x:Name="Root">
+
+    <!-- Every photo of a listing, whole and never cropped. Swipe (or use the arrows on a
+         desktop, where a mouse can't swipe) to move between them; tap to open full screen. -->
+    <Border StrokeThickness="0" StrokeShape="RoundRectangle 22">
+        <Border.Background>
+            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                <GradientStop Color="#B2BBCC" Offset="0" />
+                <GradientStop Color="#A5B1C8" Offset="1" />
+            </LinearGradientBrush>
+        </Border.Background>
+        <Grid>
+            <CarouselView x:Name="Carousel" Loop="False" PeekAreaInsets="0" HorizontalScrollBarVisibility="Never" IsScrollAnimated="False"
+                          IndicatorView="{x:Reference Indicator}" PositionChanged="OnPositionChanged">
+                <CarouselView.ItemTemplate>
+                    <DataTemplate x:DataType="x:String">
+                        <Grid>
+                            <Image Source="{Binding .}" Aspect="AspectFit"
+                                   SemanticProperties.Description="Listing photo"
+                                   SemanticProperties.Hint="Opens the photo full screen" />
+                            <Grid.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnPhotoTapped" />
+                            </Grid.GestureRecognizers>
+                        </Grid>
+                    </DataTemplate>
+                </CarouselView.ItemTemplate>
+            </CarouselView>
+
+            <!-- Nothing to show yet: the listing is loading, or has no photos. -->
+            <Path x:Name="EmptyIcon" Style="{StaticResource IconImage}" HeightRequest="40" WidthRequest="40"
+                  Fill="{StaticResource White}" Opacity="0.7" HorizontalOptions="Center" VerticalOptions="Center"
+                  InputTransparent="True" />
+
+            <Border x:Name="Counter" Style="{StaticResource OverlayBadge}" Margin="12"
+                    HorizontalOptions="End" VerticalOptions="Start" InputTransparent="True" IsVisible="False">
+                <Label x:Name="CounterLabel" Style="{StaticResource OverlayBadgeText}" />
+            </Border>
+
+            <Border x:Name="PreviousButton" BackgroundColor="{StaticResource OverlayDark}" StrokeThickness="0"
+                    StrokeShape="RoundRectangle 999" HeightRequest="34" WidthRequest="34" Margin="10,0"
+                    HorizontalOptions="Start" VerticalOptions="Center" IsVisible="False"
+                    SemanticProperties.Description="Previous photo">
+                <Path Style="{StaticResource LineChevronLeft}" HeightRequest="16" WidthRequest="16"
+                      Stroke="{StaticResource White}" HorizontalOptions="Center" VerticalOptions="Center" />
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnPreviousTapped" />
+                </Border.GestureRecognizers>
+            </Border>
+            <Border x:Name="NextButton" BackgroundColor="{StaticResource OverlayDark}" StrokeThickness="0"
+                    StrokeShape="RoundRectangle 999" HeightRequest="34" WidthRequest="34" Margin="10,0"
+                    HorizontalOptions="End" VerticalOptions="Center" IsVisible="False"
+                    SemanticProperties.Description="Next photo">
+                <Path Style="{StaticResource LineChevronLeft}" HeightRequest="16" WidthRequest="16" Rotation="180"
+                      Stroke="{StaticResource White}" HorizontalOptions="Center" VerticalOptions="Center" />
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnNextTapped" />
+                </Border.GestureRecognizers>
+            </Border>
+
+            <IndicatorView x:Name="Indicator" HorizontalOptions="Center" VerticalOptions="End" Margin="0,0,0,10"
+                           IndicatorSize="7" IndicatorColor="#99FFFFFF"
+                           SelectedIndicatorColor="{StaticResource NuGold}" InputTransparent="True" IsVisible="False" />
+        </Grid>
+    </Border>
+</ContentView>

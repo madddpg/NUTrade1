@@ -1,0 +1,53 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isSignedIn() { return request.auth != null; }
+    function isVerified() { return isSignedIn() && request.auth.token.verified == true; }
+    function isAdmin() { return isSignedIn() && request.auth.token.role == 'admin'; }
+
+    function isImageUnder(maxBytes) {
+      return request.resource.contentType.matches('image/.*')
+        && request.resource.size < maxBytes;
+    }
+
+    // Listing photos. Readable by any signed-in student because they render on the
+    // public feed; writable only into your own folder, and only once verified — the
+    // same gate that stops you creating the listing they would belong to.
+    match /listings/{userId}/{photoId} {
+      allow read: if isSignedIn();
+      allow write: if isVerified()
+        && request.auth.uid == userId
+        && isImageUnder(8 * 1024 * 1024);
+    }
+
+    // Profile avatars.
+    match /avatars/{userId}/{photoId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn()
+        && request.auth.uid == userId
+        && isImageUnder(4 * 1024 * 1024);
+    }
+
+    // Student ID photos. The one bucket path that is NOT publicly readable: only the
+    // student who uploaded it and the admins reviewing the queue can see it. Write-once
+    // per upload, and never deletable by the student, so evidence can't be pulled after
+    // review. See docs/architecture-and-security.md section 2.B.
+    match /ids/{userId}/{photoId} {
+      allow read: if isOwnerOrAdmin(userId);
+      allow create: if isSignedIn()
+        && request.auth.uid == userId
+        && isImageUnder(8 * 1024 * 1024);
+      allow update, delete: if isAdmin();
+    }
+
+    function isOwnerOrAdmin(userId) {
+      return (isSignedIn() && request.auth.uid == userId) || isAdmin();
+    }
+
+    // Anything not matched above is denied.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView
+    x:Class="NUTrade1.Controls.BottomNavBar"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
+
+    <!-- The floating pill from the mockups: five icon-only tabs. The active tab sits in
+         a navy pill with a white icon; "+" becomes a gold circle while posting. -->
+    <Grid Padding="16,0,16,14" VerticalOptions="End">
+        <Border BackgroundColor="{StaticResource NavBarBg}" StrokeThickness="1" Stroke="#E6EAF1"
+                StrokeShape="RoundRectangle 30" HeightRequest="60" VerticalOptions="End">
+            <Border.Shadow>
+                <Shadow Brush="{StaticResource CardShadow}" Offset="0,8" Radius="22" Opacity="1" />
+            </Border.Shadow>
+
+            <Grid ColumnDefinitions="*,*,*,*,*" Padding="8,0">
+
+                <!-- Home -->
+                <Grid Grid.Column="0">
+                    <Grid.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnHomeTapped" />
+                    </Grid.GestureRecognizers>
+                    <Border x:Name="HomePill" StrokeThickness="0" StrokeShape="RoundRectangle 22"
+                            HeightRequest="42" WidthRequest="58" HorizontalOptions="Center" VerticalOptions="Center">
+                        <Path x:Name="HomeIcon" Style="{StaticResource NavHome}" HeightRequest="22" WidthRequest="22" />
+                    </Border>
+                </Grid>
+
+                <!-- Bids (store) -->
+                <Grid Grid.Column="1">
+                    <Grid.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnOffersTapped" />
+                    </Grid.GestureRecognizers>
+                    <Border x:Name="OffersPill" StrokeThickness="0" StrokeShape="RoundRectangle 22"
+                            HeightRequest="42" WidthRequest="58" HorizontalOptions="Center" VerticalOptions="Center">
+                        <Path x:Name="OffersIcon" Style="{StaticResource NavStore}" HeightRequest="22" WidthRequest="22" />
+                    </Border>
+                    <Border x:Name="OffersBadgeView" IsVisible="False" BackgroundColor="{StaticResource NuGold}"
+                            StrokeThickness="0" StrokeShape="RoundRectangle 999" Padding="5,1"
+                            HorizontalOptions="Center" VerticalOptions="Center" TranslationX="14" TranslationY="-12">
+                        <Label x:Name="OffersBadgeLabel" Text="0" FontFamily="InterBold" FontSize="10" TextColor="{StaticResource NuNavy}" />
+                    </Border>
+                </Grid>
+
+                <!-- Post -->
+                <Grid Grid.Column="2">
+                    <Grid.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnPostTapped" />
+                    </Grid.GestureRecognizers>
+                    <Border x:Name="PostPill" StrokeThickness="0" StrokeShape="RoundRectangle 999"
+                            HeightRequest="44" WidthRequest="44" HorizontalOptions="Center" VerticalOptions="Center">
+                        <Path x:Name="PostIcon" Style="{StaticResource NavPlus}" HeightRequest="24" WidthRequest="24" StrokeThickness="2.2" />
+                    </Border>
+                </Grid>
+
+                <!-- Chat -->
+                <Grid Grid.Column="3">
+                    <Grid.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnChatTapped" />
+                    </Grid.GestureRecognizers>
+                    <Border x:Name="ChatPill" StrokeThickness="0" StrokeShape="RoundRectangle 22"
+                            HeightRequest="42" WidthRequest="58" HorizontalOptions="Center" VerticalOptions="Center">
+                        <Path x:Name="ChatIcon" Style="{StaticResource NavChat}" HeightRequest="22" WidthRequest="22" />
+                    </Border>
+                    <Border x:Name="ChatBadgeView" IsVisible="False" BackgroundColor="{StaticResource NuGold}"
+                            StrokeThickness="0" StrokeShape="RoundRectangle 999" Padding="5,1"
+                            HorizontalOptions="Center" VerticalOptions="Center" TranslationX="14" TranslationY="-12">
+                        <Label x:Name="ChatBadgeLabel" Text="0" FontFamily="InterBold" FontSize="10" TextColor="{StaticResource NuNavy}" />
+                    </Border>
+                </Grid>
+
+                <!-- Profile -->
+                <Grid Grid.Column="4">
+                    <Grid.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnProfileTapped" />
+                    </Grid.GestureRecognizers>
+                    <Border x:Name="ProfilePill" StrokeThickness="0" StrokeShape="RoundRectangle 22"
+                            HeightRequest="42" WidthRequest="58" HorizontalOptions="Center" VerticalOptions="Center">
+                        <Path x:Name="ProfileIcon" Style="{StaticResource NavProfile}" HeightRequest="22" WidthRequest="22" />
+                    </Border>
+                </Grid>
+            </Grid>
+        </Border>
+    </Grid>
+</ContentView>

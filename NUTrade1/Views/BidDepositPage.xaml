@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<views:AppContentPage
+    x:Class="NUTrade1.Views.BidDepositPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:views="clr-namespace:NUTrade1.Views"
+    xmlns:controls="clr-namespace:NUTrade1.Controls"
+    xmlns:vm="clr-namespace:NUTrade1.ViewModels"
+    x:DataType="vm:BidDepositViewModel"
+    Shell.NavBarIsVisible="False"
+    Title="Confirm your bid">
+
+    <Grid RowDefinitions="Auto,*">
+
+        <controls:DetailBar Grid.Row="0" HeaderTitle="Confirm your bid" />
+
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="18,10,18,28" Spacing="16">
+
+                <!-- What is being scanned for, and what it is not -->
+                <Border Style="{StaticResource Card}" Padding="20">
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="COMMITMENT DEPOSIT" Style="{StaticResource Kicker}" />
+                        <Label Text="{Binding DepositDisplay}" FontFamily="InterBold" FontSize="34"
+                               TextColor="{StaticResource Ink}" />
+                        <Label Style="{StaticResource MetaText}">
+                            <Label.FormattedText>
+                                <FormattedString>
+                                    <Span Text="on your bid of " />
+                                    <Span Text="{Binding BidDisplay}" FontFamily="InterSemiBold" />
+                                    <Span Text=" for " />
+                                    <Span Text="{Binding ItemTitle}" FontFamily="InterSemiBold" />
+                                </FormattedString>
+                            </Label.FormattedText>
+                        </Label>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- The deposit loading: its QR card in bones. -->
+                <controls:Skeleton IsActive="{Binding IsLoading}">
+                    <ContentView ControlTemplate="{StaticResource PaymentCardBones}" />
+                </controls:Skeleton>
+
+                <!-- QR -->
+                <Border Style="{StaticResource Card}" Padding="18" IsVisible="{Binding IsAwaiting}">
+                    <VerticalStackLayout Spacing="14">
+                        <controls:PaymentQrView ImageUrl="{Binding Deposit.QrImageUrl}" ImageBase64="{Binding Deposit.QrImageBase64}"
+                                                FileName="{Binding QrFileName}" />
+
+                        <Label Text="{Binding StatusText}" Style="{StaticResource MetaText}"
+                               HorizontalTextAlignment="Center" />
+                        <Label Text="{Binding ExpiryText}" Style="{StaticResource MetaText}"
+                               HorizontalTextAlignment="Center" />
+
+                        <Button Text="I've paid — check now" Style="{StaticResource NavyButton}"
+                                Command="{Binding CheckCommand}" IsEnabled="{Binding IsNotBusy}" />
+                        <controls:LoadingDots IsRunning="{Binding IsBusy}" Caption="Checking with PayMongo…" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Paid: the bid is live -->
+                <Border Style="{StaticResource Card}" Padding="18" IsVisible="{Binding IsCommitted}">
+                    <VerticalStackLayout Spacing="10">
+                        <Path Style="{StaticResource IconCheckCircle}" HeightRequest="36" WidthRequest="36"
+                              HorizontalOptions="Center" Fill="{StaticResource Success}" />
+                        <Label Text="Your bid is in" FontFamily="InterBold" FontSize="18"
+                               HorizontalTextAlignment="Center" TextColor="{StaticResource Ink}" />
+                        <Label Text="{Binding StatusText}" Style="{StaticResource MetaText}"
+                               HorizontalTextAlignment="Center" />
+                        <Button Text="Back to the listing" Style="{StaticResource GoldButton}"
+                                Command="{Binding BackToListingCommand}" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Returned: the bid went stale before the money landed -->
+                <Border Style="{StaticResource Card}" Padding="18" IsVisible="{Binding IsReturned}">
+                    <VerticalStackLayout Spacing="10">
+                        <Path Style="{StaticResource IconInfoCircle}" HeightRequest="34" WidthRequest="34"
+                              HorizontalOptions="Center" Fill="{StaticResource NuNavy}" />
+                        <Label Text="{Binding StatusText}" FontFamily="InterSemiBold" FontSize="15"
+                               HorizontalTextAlignment="Center" TextColor="{StaticResource Ink}" />
+                        <Label Text="It's in your wallet as credit — bid again, or cash it out from your profile."
+                               Style="{StaticResource MetaText}" HorizontalTextAlignment="Center" />
+                        <Button Text="Back to the listing" Style="{StaticResource GhostButton}"
+                                Command="{Binding BackToListingCommand}" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- The rules, before they pay -->
+                <Border Style="{StaticResource Card}" Padding="16">
+                    <HorizontalStackLayout Spacing="10">
+                        <Path Style="{StaticResource IconInfoCircle}" HeightRequest="17" WidthRequest="17"
+                              Fill="{StaticResource InkMuted}" VerticalOptions="Start" Margin="0,2,0,0" />
+                        <Label Text="{Binding DepositExplainer}" Style="{StaticResource MetaText}"
+                               LineHeight="1.35" HorizontalOptions="Fill" />
+                    </HorizontalStackLayout>
+                </Border>
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <controls:ToastHost Grid.Row="0" Grid.RowSpan="2" />
+    </Grid>
+
+</views:AppContentPage>

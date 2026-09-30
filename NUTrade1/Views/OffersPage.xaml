@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<views:AppContentPage
+    x:Class="NUTrade1.Views.OffersPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:views="clr-namespace:NUTrade1.Views"
+    xmlns:controls="clr-namespace:NUTrade1.Controls"
+    xmlns:vm="clr-namespace:NUTrade1.ViewModels"
+    x:Name="Page"
+    x:DataType="vm:OffersViewModel"
+    Title="My Bids">
+
+    <ContentPage.Resources>
+        <!-- One bid card in bones: cover, title, your bid, time, status pill. -->
+        <ControlTemplate x:Key="BidCardBones">
+            <Border Style="{StaticResource Card}" Padding="0">
+                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12" Padding="14">
+                    <Border Grid.Column="0" Style="{StaticResource Bone}" HeightRequest="52" WidthRequest="52" StrokeShape="RoundRectangle 14" />
+                    <VerticalStackLayout Grid.Column="1" Spacing="7" VerticalOptions="Center">
+                        <Border Style="{StaticResource Bone}" HeightRequest="13" WidthRequest="150" />
+                        <Border Style="{StaticResource Bone}" HeightRequest="10" WidthRequest="100" />
+                        <Border Style="{StaticResource Bone}" HeightRequest="9" WidthRequest="60" />
+                    </VerticalStackLayout>
+                    <Border Grid.Column="2" Style="{StaticResource BoneRound}" HeightRequest="22" WidthRequest="64" VerticalOptions="Center" />
+                </Grid>
+            </Border>
+        </ControlTemplate>
+    </ContentPage.Resources>
+
+    <Grid RowDefinitions="Auto,*">
+
+        <controls:TopBar Grid.Row="0" />
+
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="20,10,20,128" Spacing="16">
+
+                <VerticalStackLayout Spacing="3">
+                    <Label Text="My Bids" Style="{StaticResource ScreenTitle}" />
+                    <Label Text="Track the auctions you've bid on." Style="{StaticResource ScreenSubtitle}" />
+                </VerticalStackLayout>
+
+                <controls:Skeleton IsActive="{Binding IsLoading}">
+                    <VerticalStackLayout Spacing="12">
+                        <ContentView ControlTemplate="{StaticResource BidCardBones}" />
+                        <ContentView ControlTemplate="{StaticResource BidCardBones}" />
+                        <ContentView ControlTemplate="{StaticResource BidCardBones}" />
+                    </VerticalStackLayout>
+                </controls:Skeleton>
+
+                <VerticalStackLayout Spacing="12" IsVisible="{Binding HasBids}" BindableLayout.ItemsSource="{Binding MyBids}">
+                    <BindableLayout.ItemTemplate>
+                        <DataTemplate x:DataType="vm:MyBidViewModel">
+                            <Border Style="{StaticResource Card}" Padding="0">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer
+                                        Command="{Binding Source={x:Reference Page}, Path=BindingContext.OpenListingCommand}"
+                                        CommandParameter="{Binding .}" />
+                                </Border.GestureRecognizers>
+                                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12" Padding="14">
+                                    <Border Grid.Column="0" HeightRequest="52" WidthRequest="52" StrokeThickness="0"
+                                            StrokeShape="RoundRectangle 14" BackgroundColor="{StaticResource NuNavyLight}">
+                                        <Grid>
+                                            <Path Style="{StaticResource IconImage}" HeightRequest="20" WidthRequest="20" Opacity="0.55"
+                                                  HorizontalOptions="Center" VerticalOptions="Center"
+                                                  Fill="{StaticResource NuNavy}" />
+                                            <Image Aspect="AspectFill" Source="{Binding CoverPhoto}" />
+                                        </Grid>
+                                    </Border>
+                                    <VerticalStackLayout Grid.Column="1" Spacing="3" VerticalOptions="Center">
+                                        <Label Style="{StaticResource CardTitle}" MaxLines="1" LineBreakMode="TailTruncation" Text="{Binding Title}" />
+                                        <Label Style="{StaticResource MetaText}"
+                                               Text="{Binding YourBidDisplay, StringFormat='Your bid: {0}'}" />
+                                        <Label Style="{StaticResource MetaText}" FontSize="11"
+                                               Text="{Binding CreatedAt, Converter={StaticResource TimeAgo}}" />
+                                    </VerticalStackLayout>
+                                    <Border Grid.Column="2" VerticalOptions="Center" StrokeThickness="0" StrokeShape="RoundRectangle 999" Padding="10,4"
+                                            BackgroundColor="{AppThemeBinding Light={StaticResource GoldSoft}, Dark={StaticResource GoldSoftDark}}">
+                                        <Label Style="{StaticResource GoldBadgeText}" Text="{Binding StatusText}" />
+                                    </Border>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </BindableLayout.ItemTemplate>
+                </VerticalStackLayout>
+
+                <VerticalStackLayout Spacing="8" Padding="0,40" IsVisible="{Binding ShowEmptyState}">
+                    <Path Style="{StaticResource IconTag}" HeightRequest="32" WidthRequest="32" HorizontalOptions="Center"
+                          Fill="{StaticResource InkMuted}" />
+                    <Label Text="You haven't placed any bids" Style="{StaticResource CardTitle}" HorizontalOptions="Center" />
+                    <Label Text="Browse the campus feed and place a bid — your active and past bids will be tracked here."
+                           Style="{StaticResource ScreenSubtitle}" HorizontalTextAlignment="Center" />
+                </VerticalStackLayout>
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <controls:BottomNavBar Grid.Row="1" Active="Offers" VerticalOptions="End" />
+
+        <!-- In-app notifications (posted, won, paid) draw over the page -->
+        <controls:NotificationHost Grid.Row="0" Grid.RowSpan="2" />
+        <controls:ToastHost Grid.Row="0" Grid.RowSpan="2" />
+    </Grid>
+
+</views:AppContentPage>

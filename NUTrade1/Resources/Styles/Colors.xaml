@@ -1,0 +1,180 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
+
+    <!-- ============================================================
+         NUTrade palette — National University navy & gold.
+         Keys named Primary / Secondary / Tertiary / Gray* are kept so
+         the stock Styles.xaml keeps resolving; their values now point
+         at the NU brand colours.
+         ============================================================ -->
+
+    <!-- Brand -->
+    <Color x:Key="NuNavy">#0B2557</Color>
+    <Color x:Key="NuNavyLight">#ACB6C9</Color>
+    <Color x:Key="NuGold">#EFAF0E</Color>
+    <Color x:Key="NuGoldBright">#EFAF0E</Color>
+
+    <!-- Template-compatible aliases -->
+    <Color x:Key="Primary">#0B2557</Color>
+    <Color x:Key="PrimaryDark">#A8BCF2</Color>
+    <Color x:Key="PrimaryDarkText">#0D111A</Color>
+    <Color x:Key="Secondary">#EFAF0E</Color>
+    <Color x:Key="SecondaryDarkText">#F0B838</Color>
+    <Color x:Key="Tertiary">#16785A</Color>
+
+    <!-- Semantic -->
+    <Color x:Key="Success">#1FA35B</Color>
+    <Color x:Key="SuccessDark">#3EC199</Color>
+    <Color x:Key="Warning">#9A6410</Color>
+    <Color x:Key="WarningDark">#D79E52</Color>
+    <Color x:Key="Danger">#A83B3B</Color>
+    <Color x:Key="DangerDark">#E37070</Color>
+
+    <!-- Surfaces -->
+    <Color x:Key="PageBackground">#FEFEFE</Color>
+    <Color x:Key="PageBackgroundDark">#0D111A</Color>
+    <Color x:Key="Surface">#FFFFFF</Color>
+    <Color x:Key="SurfaceDark">#151A26</Color>
+    <Color x:Key="Hairline">#E0E3EA</Color>
+    <Color x:Key="HairlineDark">#29313F</Color>
+    <Color x:Key="TextPrimary">#171B23</Color>
+    <Color x:Key="TextPrimaryDark">#E7EAF1</Color>
+    <Color x:Key="TextSecondary">#5A626F</Color>
+    <Color x:Key="TextSecondaryDark">#99A2B2</Color>
+
+    <Color x:Key="White">White</Color>
+    <Color x:Key="Black">Black</Color>
+    <Color x:Key="Magenta">#D600AA</Color>
+    <Color x:Key="MidnightBlue">#190649</Color>
+    <Color x:Key="OffBlack">#1f1f1f</Color>
+
+    <Color x:Key="Gray100">#E1E1E1</Color>
+    <Color x:Key="Gray200">#C8C8C8</Color>
+    <Color x:Key="Gray300">#ACACAC</Color>
+    <Color x:Key="Gray400">#919191</Color>
+    <Color x:Key="Gray500">#6E6E6E</Color>
+    <Color x:Key="Gray600">#404040</Color>
+    <Color x:Key="Gray900">#212121</Color>
+    <Color x:Key="Gray950">#141414</Color>
+
+    <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource Primary}"/>
+    <SolidColorBrush x:Key="SecondaryBrush" Color="{StaticResource Secondary}"/>
+    <SolidColorBrush x:Key="TertiaryBrush" Color="{StaticResource Tertiary}"/>
+    <SolidColorBrush x:Key="NuNavyBrush" Color="{StaticResource NuNavy}"/>
+    <SolidColorBrush x:Key="NuGoldBrush" Color="{StaticResource NuGold}"/>
+    <SolidColorBrush x:Key="WhiteBrush" Color="{StaticResource White}"/>
+    <SolidColorBrush x:Key="BlackBrush" Color="{StaticResource Black}"/>
+
+    <SolidColorBrush x:Key="Gray100Brush" Color="{StaticResource Gray100}"/>
+    <SolidColorBrush x:Key="Gray200Brush" Color="{StaticResource Gray200}"/>
+    <SolidColorBrush x:Key="Gray300Brush" Color="{StaticResource Gray300}"/>
+    <SolidColorBrush x:Key="Gray400Brush" Color="{StaticResource Gray400}"/>
+    <SolidColorBrush x:Key="Gray500Brush" Color="{StaticResource Gray500}"/>
+    <SolidColorBrush x:Key="Gray600Brush" Color="{StaticResource Gray600}"/>
+    <SolidColorBrush x:Key="Gray900Brush" Color="{StaticResource Gray900}"/>
+    <SolidColorBrush x:Key="Gray950Brush" Color="{StaticResource Gray950}"/>
+
+    <!-- ============================================================
+         NUTrade design-system tokens (mockup-matched)
+         ============================================================ -->
+
+    <!-- Page background gradient stops -->
+    <Color x:Key="PageTop">#FEFEFE</Color>
+    <Color x:Key="PageBottom">#E5E9F1</Color>
+    <Color x:Key="PageTopDark">#0C1017</Color>
+    <Color x:Key="PageBottomDark">#141A26</Color>
+
+    <!-- Cards / surfaces -->
+    <Color x:Key="CardBg">#FAFBFD</Color>
+    <Color x:Key="CardBgDark">#171D2A</Color>
+    <Color x:Key="CardBorder">#EAEDF3</Color>
+    <Color x:Key="CardBorderDark">#2A3140</Color>
+
+    <!-- Skeleton loaders: the grey "bones" standing in for content that is loading -->
+    <Color x:Key="SkeletonBone">#E6EAF1</Color>
+    <Color x:Key="SkeletonBoneDark">#252C3A</Color>
+
+    <!-- Ink -->
+    <Color x:Key="Ink">#000000</Color>
+    <Color x:Key="InkDark">#EAEEF7</Color>
+    <Color x:Key="InkMuted">#8A93A6</Color>
+    <Color x:Key="InkMutedDark">#95A0B6</Color>
+
+    <!-- Chips -->
+    <Color x:Key="ChipBg">#F7FAFC</Color>
+    <Color x:Key="ChipBgDark">#1E2534</Color>
+    <Color x:Key="ChipBorder">#E6EBF2</Color>
+    <Color x:Key="ChipBorderDark">#333B4C</Color>
+    <Color x:Key="ChipText">#8690A4</Color>
+    <Color x:Key="ChipTextDark">#C3CBDC</Color>
+
+    <!-- Selected package card (Post screen) -->
+    <Color x:Key="SelectedBg">#EEF2FC</Color>
+    <Color x:Key="SelectedBgDark">#1D2640</Color>
+
+    <!-- Gold accents -->
+    <Color x:Key="GoldSoft">#FDF4DE</Color>
+    <Color x:Key="GoldSoftDark">#3A2E12</Color>
+    <Color x:Key="GoldSoftText">#9A7414</Color>
+    <Color x:Key="GoldSoftTextDark">#E7B24E</Color>
+
+    <!-- Image overlay badge -->
+    <Color x:Key="OverlayDark">#990B2557</Color>
+
+    <!-- Shadow -->
+    <Color x:Key="CardShadow">#1A0B2557</Color>
+
+    <SolidColorBrush x:Key="InkBrush" Color="{StaticResource Ink}"/>
+    <SolidColorBrush x:Key="NuGoldBrightBrush" Color="{StaticResource NuGoldBright}"/>
+    <SolidColorBrush x:Key="CardBorderBrush" Color="{StaticResource CardBorder}"/>
+
+    <!-- ============================================================
+         2026-09 redesign — sampled from the supplied mockups
+         ============================================================ -->
+
+    <!-- Home: search pill, filter button, floating nav bar -->
+    <Color x:Key="SearchBg">#E7EDF5</Color>
+    <Color x:Key="FilterBg">#F0F4FA</Color>
+    <Color x:Key="NavBarBg">#F7F9FB</Color>
+
+    <!-- Hero card subtitle, and the translucent "Verified" pill on the profile hero -->
+    <Color x:Key="HeroMuted">#A9B6CF</Color>
+    <Color x:Key="HeroPill">#40FFFFFF</Color>
+
+    <!-- Incoming-bid actions on Profile -->
+    <Color x:Key="DeclineBg">#D9E0EB</Color>
+    <Color x:Key="DeclineText">#8592A7</Color>
+    <Color x:Key="ApproveBg">#FBF2DD</Color>
+    <Color x:Key="ApproveText">#B98A10</Color>
+
+    <!-- Welcome screen -->
+    <Color x:Key="WelcomeBlue">#1850BD</Color>
+    <Color x:Key="WelcomeNavy">#002263</Color>
+
+    <!-- Notification card (image 7) -->
+    <Color x:Key="NotifyBorder">#ACF9CF</Color>
+    <Color x:Key="NotifyCheckBg">#D4FDE5</Color>
+    <Color x:Key="NotifyCheck">#36D97F</Color>
+    <Color x:Key="NotifyTitle">#052B5D</Color>
+    <Color x:Key="NotifyBody">#8C98AC</Color>
+    <Color x:Key="NotifyClose">#A6B4CC</Color>
+    <Color x:Key="NotifyPrimary">#FCAC00</Color>
+    <Color x:Key="NotifyPrimaryText">#00275A</Color>
+    <Color x:Key="NotifyDismissBg">#EFF4FD</Color>
+    <Color x:Key="NotifyDismissText">#8592A7</Color>
+
+    <!-- Hero cards are flat navy in the redesign -->
+    <SolidColorBrush x:Key="HeroBrush" Color="#0B2557" />
+
+    <!-- Page background: white at the top fading to #E5E9F1, as in every mockup screen.
+         Dark mode keeps its own gradient (the app is locked to light mode anyway). -->
+    <LinearGradientBrush x:Key="PageBrush" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="{AppThemeBinding Light={StaticResource PageTop}, Dark={StaticResource PageTopDark}}" Offset="0.0" />
+        <GradientStop Color="{AppThemeBinding Light={StaticResource PageBottom}, Dark={StaticResource PageBottomDark}}" Offset="1.0" />
+    </LinearGradientBrush>
+
+    <!-- Gold buttons are flat in the redesign -->
+    <SolidColorBrush x:Key="GoldBrush" Color="#EFAF0E" />
+</ResourceDictionary>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView
+    x:Class="NUTrade1.Controls.DetailBar"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
+
+    <Grid ColumnDefinitions="Auto,*" Padding="12,12,20,6" ColumnSpacing="6" VerticalOptions="Start">
+        <Border Grid.Column="0" HeightRequest="40" WidthRequest="40" StrokeThickness="0" StrokeShape="RoundRectangle 999"
+                BackgroundColor="Transparent">
+            <Path Style="{StaticResource IconArrowLeft}" HeightRequest="22" WidthRequest="22"
+                  Fill="{AppThemeBinding Light={StaticResource Ink}, Dark={StaticResource InkDark}}" />
+            <Border.GestureRecognizers>
+                <TapGestureRecognizer Tapped="OnBackTapped" />
+            </Border.GestureRecognizers>
+        </Border>
+        <Label x:Name="TitleLabel" Grid.Column="1" Text="Back" Style="{StaticResource CardTitle}" FontSize="17"
+               VerticalOptions="Center" />
+    </Grid>
+</ContentView>

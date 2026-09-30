@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView
+    x:Class="NUTrade1.Controls.OtpModal"
+    x:Name="Self"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:controls="clr-namespace:NUTrade1.Controls"
+    IsVisible="{Binding IsOpen, Source={x:Reference Self}}">
+
+    <!-- Bindings go through Source={x:Reference Self}: the ContentView keeps the page's
+         ViewModel as its BindingContext, so the host page still writes
+         Code="{Binding Code}" against its own VM. -->
+    <Grid>
+        <!-- Scrim. Tapping it dismisses, the same as the X. -->
+        <BoxView Color="{StaticResource OverlayDark}">
+            <BoxView.GestureRecognizers>
+                <TapGestureRecognizer Command="{Binding CloseCommand, Source={x:Reference Self}}" />
+            </BoxView.GestureRecognizers>
+        </BoxView>
+
+        <Border Style="{StaticResource Card}" Padding="20" Margin="24"
+                VerticalOptions="Center" HorizontalOptions="Fill" MaximumWidthRequest="400">
+            <VerticalStackLayout Spacing="14">
+
+                <Grid ColumnDefinitions="*,Auto">
+                    <Label Grid.Column="0" Text="Enter your code" Style="{StaticResource ScreenTitle}" FontSize="19"
+                           VerticalOptions="Center" />
+                    <Grid Grid.Column="1" WidthRequest="32" HeightRequest="32">
+                        <Grid.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding CloseCommand, Source={x:Reference Self}}" />
+                        </Grid.GestureRecognizers>
+                        <Path Style="{StaticResource LineClose}" HeightRequest="17" WidthRequest="17"
+                              Stroke="{StaticResource InkMuted}" HorizontalOptions="Center" VerticalOptions="Center"
+                              InputTransparent="True" />
+                    </Grid>
+                </Grid>
+
+                <Label Style="{StaticResource ScreenSubtitle}" FontSize="13.5"
+                       Text="{Binding Message, Source={x:Reference Self}}" />
+
+                <Border Style="{StaticResource InputShell}">
+                    <Entry x:Name="CodeEntry" Style="{StaticResource ShellEntry}" Placeholder="000000"
+                           Text="{Binding Code, Source={x:Reference Self}, Mode=TwoWay}"
+                           MaxLength="6" HeightRequest="56" Keyboard="Numeric" ReturnType="Go"
+                           ReturnCommand="{Binding VerifyCommand, Source={x:Reference Self}}"
+                           FontFamily="InterSemiBold" FontSize="28" CharacterSpacing="8"
+                           HorizontalTextAlignment="Center" />
+                </Border>
+
+                <Button Text="{Binding VerifyText, Source={x:Reference Self}}" Style="{StaticResource GoldButton}"
+                        Command="{Binding VerifyCommand, Source={x:Reference Self}}"
+                        IsEnabled="{Binding IsNotBusy, Source={x:Reference Self}}" />
+
+                <controls:LoadingDots IsRunning="{Binding IsBusy, Source={x:Reference Self}}"
+                                      Caption="Checking your code…" />
+
+                <Button Text="{Binding ResendText, Source={x:Reference Self}}" Style="{StaticResource GhostButton}"
+                        Command="{Binding ResendCommand, Source={x:Reference Self}}"
+                        IsEnabled="{Binding CanResend, Source={x:Reference Self}}" />
+
+                <HorizontalStackLayout Spacing="6" HorizontalOptions="Center">
+                    <Path Style="{StaticResource IconClock}" HeightRequest="13" WidthRequest="13"
+                          Fill="{StaticResource InkMuted}" />
+                    <Label Text="Codes expire after 10 minutes." Style="{StaticResource MetaText}" />
+                </HorizontalStackLayout>
+            </VerticalStackLayout>
+        </Border>
+    </Grid>
+</ContentView>

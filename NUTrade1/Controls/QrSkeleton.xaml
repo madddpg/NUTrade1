@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Stands in for a payment QR while PayMongo mints it: the three corner finder squares
+     every QR code has, and a few blocks of "data" between them. -->
+<controls:Skeleton
+    x:Class="NUTrade1.Controls.QrSkeleton"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:controls="clr-namespace:NUTrade1.Controls">
+
+    <Grid Margin="18" RowDefinitions="Auto,*,Auto" ColumnDefinitions="Auto,*,Auto" RowSpacing="10" ColumnSpacing="10">
+        <Border Grid.Row="0" Grid.Column="0" Style="{StaticResource Bone}" HeightRequest="50" WidthRequest="50" StrokeShape="RoundRectangle 10" />
+        <Border Grid.Row="0" Grid.Column="2" Style="{StaticResource Bone}" HeightRequest="50" WidthRequest="50" StrokeShape="RoundRectangle 10" />
+        <Border Grid.Row="2" Grid.Column="0" Style="{StaticResource Bone}" HeightRequest="50" WidthRequest="50" StrokeShape="RoundRectangle 10" />
+
+        <VerticalStackLayout Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Spacing="10" VerticalOptions="Center">
+            <Border Style="{StaticResource Bone}" HorizontalOptions="Fill" />
+            <Border Style="{StaticResource Bone}" WidthRequest="120" />
+            <Border Style="{StaticResource Bone}" HorizontalOptions="Fill" />
+        </VerticalStackLayout>
+
+        <VerticalStackLayout Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" Spacing="10" VerticalOptions="Center">
+            <Border Style="{StaticResource Bone}" WidthRequest="90" />
+            <Border Style="{StaticResource Bone}" HorizontalOptions="Fill" />
+        </VerticalStackLayout>
+    </Grid>
+</controls:Skeleton>

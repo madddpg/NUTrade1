@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<views:AppContentPage
+    x:Class="NUTrade1.Views.ListingDetailPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:views="clr-namespace:NUTrade1.Views"
+    xmlns:controls="clr-namespace:NUTrade1.Controls"
+    xmlns:vm="clr-namespace:NUTrade1.ViewModels"
+    xmlns:core="clr-namespace:NUTrade1.Core;assembly=NUTrade1.Core"
+    x:Name="Page"
+    x:DataType="vm:ListingDetailViewModel"
+    Title="Auction">
+
+    <Grid RowDefinitions="Auto,Auto,*">
+
+        <controls:TopBar Grid.Row="0" />
+        <controls:BackLink Grid.Row="1" />
+
+        <ScrollView Grid.Row="2">
+            <Grid>
+
+            <!-- The auction in bones: photo, then the detail card — title, seller, the
+                 three figures, the refresh pill, description and bid history. -->
+            <controls:Skeleton IsActive="{Binding IsLoading}">
+                <VerticalStackLayout Padding="20,0,20,120" Spacing="14">
+                    <Border Style="{StaticResource Bone}" HeightRequest="250" HorizontalOptions="Fill" StrokeShape="RoundRectangle 18" />
+
+                    <Border Style="{StaticResource Card}" Padding="16">
+                        <VerticalStackLayout Spacing="12">
+                            <VerticalStackLayout Spacing="8">
+                                <Border Style="{StaticResource Bone}" HeightRequest="10" WidthRequest="110" />
+                                <Border Style="{StaticResource Bone}" HeightRequest="18" WidthRequest="210" />
+                                <Border Style="{StaticResource Bone}" HeightRequest="10" WidthRequest="140" />
+                            </VerticalStackLayout>
+
+                            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="9">
+                                <Border Grid.Column="0" Style="{StaticResource BoneRound}" HeightRequest="30" WidthRequest="30" />
+                                <VerticalStackLayout Grid.Column="1" Spacing="6" VerticalOptions="Center">
+                                    <Border Style="{StaticResource Bone}" HeightRequest="11" WidthRequest="120" />
+                                    <Border Style="{StaticResource Bone}" HeightRequest="9" WidthRequest="80" />
+                                </VerticalStackLayout>
+                            </Grid>
+
+                            <BoxView HeightRequest="1" Color="{StaticResource CardBorder}" />
+
+                            <Grid ColumnDefinitions="*,*,Auto" ColumnSpacing="8">
+                                <VerticalStackLayout Grid.Column="0" Spacing="6">
+                                    <Border Style="{StaticResource Bone}" HeightRequest="8" WidthRequest="70" />
+                                    <Border Style="{StaticResource Bone}" HeightRequest="18" WidthRequest="80" />
+                                </VerticalStackLayout>
+                                <VerticalStackLayout Grid.Column="1" Spacing="6">
+                                    <Border Style="{StaticResource Bone}" HeightRequest="8" WidthRequest="70" />
+                                    <Border Style="{StaticResource Bone}" HeightRequest="18" WidthRequest="80" />
+                                </VerticalStackLayout>
+                                <VerticalStackLayout Grid.Column="2" Spacing="6" Margin="0,0,10,0">
+                                    <Border Style="{StaticResource Bone}" HeightRequest="8" WidthRequest="30" />
+                                    <Border Style="{StaticResource Bone}" HeightRequest="18" WidthRequest="24" HorizontalOptions="Center" />
+                                </VerticalStackLayout>
+                            </Grid>
+
+                            <Border Style="{StaticResource BoneRound}" HeightRequest="38" HorizontalOptions="Fill" />
+
+                            <VerticalStackLayout Spacing="7">
+                                <Border Style="{StaticResource Bone}" HeightRequest="10" HorizontalOptions="Fill" />
+                                <Border Style="{StaticResource Bone}" HeightRequest="10" HorizontalOptions="Fill" />
+                                <Border Style="{StaticResource Bone}" HeightRequest="10" WidthRequest="180" />
+                            </VerticalStackLayout>
+
+                            <VerticalStackLayout Spacing="10">
+                                <Border Style="{StaticResource Bone}" HeightRequest="13" WidthRequest="90" />
+                                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+                                    <Border Grid.Column="0" Style="{StaticResource BoneRound}" HeightRequest="30" WidthRequest="30" />
+                                    <VerticalStackLayout Grid.Column="1" Spacing="6" VerticalOptions="Center">
+                                        <Border Style="{StaticResource Bone}" HeightRequest="11" WidthRequest="100" />
+                                        <Border Style="{StaticResource Bone}" HeightRequest="9" WidthRequest="60" />
+                                    </VerticalStackLayout>
+                                    <Border Grid.Column="2" Style="{StaticResource Bone}" HeightRequest="13" WidthRequest="56" VerticalOptions="Center" />
+                                </Grid>
+                            </VerticalStackLayout>
+                        </VerticalStackLayout>
+                    </Border>
+                </VerticalStackLayout>
+            </controls:Skeleton>
+
+            <VerticalStackLayout Padding="20,0,20,120" Spacing="14" IsVisible="{Binding IsNotLoading}">
+
+                <!-- Photos: every one, whole and never cropped; tap for full screen and zoom -->
+                <Grid HeightRequest="250">
+                    <controls:PhotoCarousel Photos="{Binding Listing.Photos}" PhotoTappedCommand="{Binding OpenPhotoCommand}" />
+                    <Border BackgroundColor="{StaticResource NuGold}" StrokeThickness="0" StrokeShape="RoundRectangle 999"
+                            Padding="8,2" Margin="12" VerticalOptions="Start" HorizontalOptions="Start" InputTransparent="True"
+                            IsVisible="{Binding Listing.IsPinned}">
+                        <HorizontalStackLayout Spacing="3">
+                            <Path Style="{StaticResource IconPin}" HeightRequest="10" WidthRequest="10" VerticalOptions="Center"
+                                  Fill="{StaticResource NuNavy}" />
+                            <Label Text="Priority" FontFamily="InterBold" FontSize="10.5" TextColor="{StaticResource NuNavy}" />
+                        </HorizontalStackLayout>
+                    </Border>
+                </Grid>
+
+                <Border Style="{StaticResource Card}" Padding="16">
+                    <VerticalStackLayout Spacing="12">
+
+                        <VerticalStackLayout Spacing="4">
+                            <HorizontalStackLayout Spacing="10">
+                                <Label FontFamily="InterRegular" FontSize="12" TextColor="{StaticResource InkMuted}"
+                                       Text="{Binding Listing.CategoryLabel, FallbackValue='Item'}" />
+                                <Label FontFamily="InterMedium" FontSize="12" TextColor="{StaticResource NuGold}"
+                                       Text="{Binding Listing.Condition, Converter={StaticResource EnumDisplay}, ConverterParameter='Good'}" />
+                            </HorizontalStackLayout>
+                            <Label Text="{Binding Listing.Title, FallbackValue='Auction'}" FontFamily="InterBold" FontSize="19"
+                                   TextColor="{StaticResource Ink}" />
+                            <HorizontalStackLayout Spacing="5" Margin="0,2,0,0"
+                                                   IsVisible="{Binding Listing.MeetupLabel, Converter={StaticResource HasValue}}">
+                                <Path Style="{StaticResource IconMapMarker}" HeightRequest="13" WidthRequest="13"
+                                      Fill="{StaticResource InkMuted}" VerticalOptions="Center" />
+                                <Label Text="{Binding Listing.MeetupLabel}" FontFamily="InterRegular" FontSize="12"
+                                       TextColor="{StaticResource InkMuted}" VerticalOptions="Center" />
+                            </HorizontalStackLayout>
+                        </VerticalStackLayout>
+
+                        <!-- Seller -->
+                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="9">
+                            <Border Grid.Column="0" HeightRequest="30" WidthRequest="30" StrokeThickness="0" StrokeShape="RoundRectangle 999"
+                                    BackgroundColor="{StaticResource NuGold}" VerticalOptions="Center">
+                                <Label Text="{Binding Seller.DisplayName, Converter={StaticResource Initials}}"
+                                       FontFamily="InterBold" FontSize="11" TextColor="{StaticResource NuNavy}"
+                                       HorizontalOptions="Center" VerticalOptions="Center" />
+                            </Border>
+                            <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
+                                <Label FontFamily="InterSemiBold" FontSize="13" TextColor="{StaticResource Ink}"
+                                       Text="{Binding Seller.DisplayName, FallbackValue='NU–Lipa student', TargetNullValue='NU–Lipa student'}" />
+                                <Label FontFamily="InterRegular" FontSize="11" TextColor="{StaticResource InkMuted}"
+                                       Text="{Binding Seller, Converter={StaticResource HubProgram}}" />
+                            </VerticalStackLayout>
+                        </Grid>
+
+                        <BoxView HeightRequest="1" Color="{StaticResource CardBorder}" />
+
+                        <!-- Stats -->
+                        <Grid ColumnDefinitions="*,*,Auto" ColumnSpacing="8">
+                            <VerticalStackLayout Grid.Column="0" Spacing="1">
+                                <Label Text="CURRENT BID" FontFamily="InterMedium" FontSize="9.5" CharacterSpacing="0.3"
+                                       TextColor="{StaticResource InkMuted}" />
+                                <Label FontFamily="InterBold" FontSize="19" TextColor="{StaticResource Ink}"
+                                       Text="{Binding CurrentBidDisplay}" />
+                            </VerticalStackLayout>
+                            <VerticalStackLayout Grid.Column="1" Spacing="1">
+                                <Label Text="MIN. NEXT BID" FontFamily="InterMedium" FontSize="9.5" CharacterSpacing="0.3"
+                                       TextColor="{StaticResource InkMuted}" />
+                                <Label FontFamily="InterBold" FontSize="19" TextColor="{StaticResource Ink}"
+                                       Text="{Binding MinNextBidDisplay}" />
+                            </VerticalStackLayout>
+                            <VerticalStackLayout Grid.Column="2" Spacing="1" Margin="0,0,10,0">
+                                <Label Text="BIDS" FontFamily="InterMedium" FontSize="9.5" CharacterSpacing="0.3"
+                                       TextColor="{StaticResource InkMuted}" HorizontalOptions="Center" />
+                                <Label FontFamily="InterBold" FontSize="19" TextColor="{StaticResource Ink}"
+                                       HorizontalOptions="Center" Text="{Binding BidCountDisplay}" />
+                            </VerticalStackLayout>
+                        </Grid>
+
+                        <!-- Countdown pill -->
+                        <Border StrokeThickness="1" Stroke="#F4DFA8" StrokeShape="RoundRectangle 999" Padding="14,9"
+                                BackgroundColor="{StaticResource GoldSoft}">
+                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                <Label Grid.Column="0" Text="NEXT FEED REFRESH" FontFamily="InterMedium" FontSize="11"
+                                       CharacterSpacing="0.3" TextColor="#919397" VerticalOptions="Center" />
+                                <HorizontalStackLayout Grid.Column="1" Spacing="6" VerticalOptions="Center">
+                                    <Path Style="{StaticResource LineTimer}" HeightRequest="15" WidthRequest="15"
+                                          Stroke="{StaticResource NuNavy}" VerticalOptions="Center" />
+                                    <Label FontFamily="InterBold" FontSize="12.5" TextColor="{StaticResource NuNavy}" VerticalOptions="Center"
+                                           Text="{Binding Listing.CountdownText, StringFormat='{0} until refresh'}" />
+                                </HorizontalStackLayout>
+                            </Grid>
+                        </Border>
+
+                        <Label Text="{Binding Listing.Description}" FontFamily="InterRegular" FontSize="13.5" LineHeight="1.35"
+                               TextColor="#3F4A5E" IsVisible="{Binding Listing.Description, Converter={StaticResource HasValue}}" />
+
+                        <!-- Place a bid -->
+                        <!-- Never drawn for the seller, and not until the listing has loaded — before
+                             that, whose listing it is isn't known yet. -->
+                        <VerticalStackLayout Spacing="6" IsVisible="{Binding ShowBidForm}">
+                            <Label Text="Your maximum bid" FontFamily="InterRegular" FontSize="11" TextColor="{StaticResource InkMuted}" />
+                            <Border StrokeThickness="1" Stroke="{StaticResource CardBorder}" StrokeShape="RoundRectangle 999"
+                                    BackgroundColor="{StaticResource White}" Padding="16,0,0,0" HeightRequest="46">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <Entry Grid.Column="0" Style="{StaticResource ShellEntry}" Keyboard="Numeric"
+                                           Text="{Binding BidAmountText}" Placeholder="₱" VerticalOptions="Center" />
+                                    <Button Grid.Column="1" Text="Bid" Style="{StaticResource NavyButton}" FontSize="13"
+                                            HeightRequest="46" WidthRequest="112" Padding="0"
+                                            Command="{Binding PlaceBidCommand}" IsEnabled="{Binding IsNotBusy}" />
+                                </Grid>
+                            </Border>
+                            <!-- Said before they tap, not after: bidding now costs money up front. -->
+                            <HorizontalStackLayout Spacing="6" Margin="2,2,0,0">
+                                <Path Style="{StaticResource IconInfoCircle}" HeightRequest="13" WidthRequest="13"
+                                      Fill="{StaticResource InkMuted}" VerticalOptions="Start" Margin="0,1,0,0" />
+                                <Label Text="{Binding DepositHint}" Style="{StaticResource MetaText}" HorizontalOptions="Fill" />
+                            </HorizontalStackLayout>
+                        </VerticalStackLayout>
+
+                        <Border StrokeThickness="0" StrokeShape="RoundRectangle 999" Padding="14,10"
+                                BackgroundColor="{StaticResource FilterBg}" IsVisible="{Binding IsOwnListing}">
+                            <Label Text="This is your listing. Sellers can't bid on their own items." FontSize="13"
+                                   TextColor="{StaticResource NuNavy}" />
+                        </Border>
+
+                        <!-- Bid history -->
+                        <VerticalStackLayout Spacing="6">
+                            <Label Text="Bid history" FontFamily="InterBold" FontSize="14" TextColor="{StaticResource Ink}" />
+                            <Label Text="No bids yet — be the first." Style="{StaticResource MetaText}"
+                                   IsVisible="{Binding BidHistory.Count, Converter={StaticResource CountToBool}, ConverterParameter=invert}" />
+                            <VerticalStackLayout Spacing="0" BindableLayout.ItemsSource="{Binding BidHistory}">
+                                <BindableLayout.ItemTemplate>
+                                    <DataTemplate x:DataType="core:Bid">
+                                        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10" Padding="0,8">
+                                            <Border Grid.Column="0" HeightRequest="30" WidthRequest="30" StrokeThickness="0"
+                                                    StrokeShape="RoundRectangle 999" BackgroundColor="{StaticResource NuGold}">
+                                                <Label Text="{Binding BidderName, Converter={StaticResource Initials}}"
+                                                       FontFamily="InterBold" FontSize="11" TextColor="{StaticResource NuNavy}"
+                                                       HorizontalOptions="Center" VerticalOptions="Center" />
+                                            </Border>
+                                            <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="0">
+                                                <Label FontFamily="InterSemiBold" FontSize="13" TextColor="{StaticResource Ink}" Text="{Binding BidderName}" />
+                                                <Label Style="{StaticResource MetaText}" FontSize="11" Text="{Binding CreatedAt, Converter={StaticResource TimeAgo}}" />
+                                            </VerticalStackLayout>
+                                            <Label Grid.Column="2" FontFamily="InterBold" FontSize="14" VerticalOptions="Center"
+                                                   TextColor="{StaticResource Ink}"
+                                                   Text="{Binding AmountCentavos, Converter={StaticResource Centavos}}" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </BindableLayout.ItemTemplate>
+                            </VerticalStackLayout>
+                        </VerticalStackLayout>
+                    </VerticalStackLayout>
+                </Border>
+
+            </VerticalStackLayout>
+            </Grid>
+        </ScrollView>
+
+        <controls:BottomNavBar Grid.Row="2" Active="Offers" VerticalOptions="End" />
+
+        <!-- In-app notifications (posted, won, paid) draw over the page -->
+        <controls:NotificationHost Grid.Row="0" Grid.RowSpan="3" />
+        <controls:ToastHost Grid.Row="0" Grid.RowSpan="3" />
+    </Grid>
+
+</views:AppContentPage>
