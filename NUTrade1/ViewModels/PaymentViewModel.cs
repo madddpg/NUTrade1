@@ -26,6 +26,7 @@ public partial class PaymentViewModel : BaseViewModel
     private readonly INavigationService _nav;
     private IDisposable? _listingSubscription;
     private CancellationTokenSource? _paymentChecks;
+    private SecondClock? _expiryClock;
     private bool _postedNoticeShown;
 
     /// <summary>How often the QR screen asks the backend to check with PayMongo.</summary>
@@ -84,10 +85,10 @@ public partial class PaymentViewModel : BaseViewModel
     /// <summary>What "Save QR" calls the picture, so it is easy to find in the gallery.</summary>
     public string QrFileName => $"nutrade-listing-fee-{DateTime.Now:yyyyMMdd-HHmm}";
 
-    /// <summary>PayMongo's own expiry for the code on screen (about 30 minutes).</summary>
+    /// <summary>PayMongo's expiry for the code on screen, as a ticking clock.</summary>
     public string ExpiryText => Qr is { RequiresPayment: true } qr
-        ? $"This code works until {qr.ExpiresAt.ToLocalTime():h:mm tt}. Generate a new one after that."
-        : "QR codes expire about 30 minutes after they're generated.";
+        ? $"Expires in {CountdownClock.Format(qr.ExpiresAt - DateTimeOffset.UtcNow)}"
+        : string.Empty;
 
     /// <summary>The QR card — hidden for a free first post, which has nothing to pay.</summary>
     public bool ShowQr => CurrentStage == Stage.AwaitingPayment && (Qr?.RequiresPayment ?? true);
@@ -128,6 +129,7 @@ public partial class PaymentViewModel : BaseViewModel
     {
         await GenerateAsync();
 
+        _expiryClock ??= new SecondClock(() => OnPropertyChanged(nameof(ExpiryText)));
         if (string.IsNullOrEmpty(ListingId)) return;
         _listingSubscription = _listings.ObserveListing(ListingId, Apply);
         StartPaymentChecks();
@@ -239,7 +241,7 @@ public partial class PaymentViewModel : BaseViewModel
                 MarkPosted();
                 ApprovedText = listing.IsVisible || listing.VisibleFrom is null
                     ? "Your listing is now live on the campus feed."
-                    : $"It joins the campus feed at the next hourly refresh, {listing.VisibleFrom.Value.ToLocalTime():h:mm tt}.";
+                    : $"It joins the campus feed in {CountdownClock.Format(listing.VisibleFrom.Value - DateTimeOffset.UtcNow)}.";
                 CurrentStage = Stage.Approved;
                 break;
 
@@ -277,6 +279,8 @@ public partial class PaymentViewModel : BaseViewModel
     public override Task OnDisappearingAsync()
     {
         StopPaymentChecks();
+        _expiryClock?.Dispose();
+        _expiryClock = null;
         _listingSubscription?.Dispose();
         _listingSubscription = null;
         return Task.CompletedTask;

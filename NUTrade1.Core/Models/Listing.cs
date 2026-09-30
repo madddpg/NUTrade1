@@ -51,6 +51,51 @@ public sealed class Listing : INotifyPropertyChanged
 
     public ListingPackage Package { get; set; } = ListingPackage.Free;
 
+    /// <summary>
+    /// Auction, set price, or swap. Missing on older documents, which are auctions.
+    /// </summary>
+    public ListingKind Kind { get; set; } = ListingKind.Auction;
+
+    /// <summary>True for a timed auction. Bids, the bid history, and the auction clock are for these only.</summary>
+    public bool IsAuction => Kind == ListingKind.Auction;
+
+    /// <summary>Short label for a feed badge: Auction, Buy, or Swap.</summary>
+    public string KindLabel => Kind switch
+    {
+        ListingKind.Standard => "Buy",
+        ListingKind.Swap => "Swap",
+        _ => "Auction",
+    };
+
+    /// <summary>Caption above the figure on a card.</summary>
+    public string OfferCaption => Kind switch
+    {
+        ListingKind.Standard => "PRICE",
+        ListingKind.Swap => "SWAP",
+        _ => "HIGHEST BID",
+    };
+
+    /// <summary>The figure under <see cref="OfferCaption"/>.</summary>
+    public string OfferDisplay => Kind switch
+    {
+        ListingKind.Standard => Money.ToDisplay(StartingBidCentavos),
+        ListingKind.Swap => "Open",
+        _ => Money.ToDisplay(CurrentHighestBidCentavos),
+    };
+
+    /// <summary>The line under the price on a feed card.</summary>
+    public string FeedFootnote => Kind == ListingKind.Auction
+        ? $"{BidCount} bids · refreshes hourly"
+        : "Refreshes hourly";
+
+    /// <summary>Shown to a buyer on a listing that does not take bids. Empty for auctions.</summary>
+    public string BuyerNote => Kind switch
+    {
+        ListingKind.Standard => "This is a set price. Meet the seller on campus to buy it — it is not an auction.",
+        ListingKind.Swap => "The seller wants to swap this item. Arrange the trade with them on campus.",
+        _ => string.Empty,
+    };
+
     /// <summary>Set true by a Function when a <see cref="ListingPackage.Priority"/> fee is paid.</summary>
     public bool IsPinned { get; set; }
 
@@ -112,24 +157,56 @@ public sealed class Listing : INotifyPropertyChanged
     public long MinNextBidCentavos =>
         BidCount == 0 ? StartingBidCentavos : CurrentHighestBidCentavos + MinIncrementCentavos;
 
-    /// <summary>Live "1h 23m" / "45s" text, refreshed by <see cref="TickCountdown"/>. Empty once ended.</summary>
+    /// <summary>
+    /// Live auction clock (<c>HH:MM:SS</c> or <c>MM:SS</c>), refreshed by <see cref="TickCountdown"/>.
+    /// <c>00:00</c> once <see cref="AuctionEndsAt"/> has passed. Empty when the auction has no end.
+    /// </summary>
     public string CountdownText { get; private set; } = string.Empty;
+
+    /// <summary>
+    /// True while an auction has an end time, including after it hits <c>00:00</c>.
+    /// Standard and swap listings never show this clock.
+    /// </summary>
+    public bool HasAuctionClock => Kind == ListingKind.Auction && AuctionEndsAt is not null;
+
+    /// <summary>Clock until a hidden listing joins the feed. Empty once it is visible.</summary>
+    public string RefreshCountdownText { get; private set; } = string.Empty;
+
+    /// <summary>The hourly-slot clock should be on screen.</summary>
+    public bool ShowRefreshCountdown { get; private set; }
 
     public bool AuctionEnded { get; private set; }
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    /// <summary>Recomputes <see cref="CountdownText"/>/<see cref="AuctionEnded"/> against <paramref name="now"/>.
-    /// Called every second by a page-owned dispatcher timer while the auction is live.</summary>
+    /// <summary>Recomputes the auction clock and the feed-slot clock against <paramref name="now"/>.
+    /// Called every second by a page-owned dispatcher timer.</summary>
     public void TickCountdown(DateTimeOffset now)
     {
-        var (text, ended) = Format(AuctionEndsAt, now);
-        if (text == CountdownText && ended == AuctionEnded) return;
+        var (text, ended) = Kind == ListingKind.Auction
+            ? Format(AuctionEndsAt, now)
+            : (string.Empty, false);
+        var refresh = RefreshClock(now);
+        var showRefresh = refresh.Length > 0;
+        if (text == CountdownText && ended == AuctionEnded
+            && refresh == RefreshCountdownText && showRefresh == ShowRefreshCountdown)
+            return;
 
         CountdownText = text;
         AuctionEnded = ended;
+        RefreshCountdownText = refresh;
+        ShowRefreshCountdown = showRefresh;
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CountdownText)));
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(AuctionEnded)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(RefreshCountdownText)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ShowRefreshCountdown)));
+    }
+
+    /// <summary><c>MM:SS</c> / <c>HH:MM:SS</c> until the next hourly refresh, or <c>00:00</c> when that slot has arrived and the listing is still hidden.</summary>
+    private string RefreshClock(DateTimeOffset now)
+    {
+        if (IsVisible || VisibleFrom is not { } from) return string.Empty;
+        return CountdownClock.Format(from - now);
     }
 
     /// <summary>`AcademicSupplies` -> `Academic Supplies`. Mirrors EnumDisplayConverter.Humanize,
@@ -151,10 +228,8 @@ public sealed class Listing : INotifyPropertyChanged
         if (endsAt is not { } ends) return (string.Empty, false);
 
         var remaining = ends - now;
-        if (remaining <= TimeSpan.Zero) return ("Ended", true);
+        if (remaining <= TimeSpan.Zero) return ("00:00", true);
 
-        return remaining.TotalHours >= 1
-            ? ($"{(int)remaining.TotalHours}h {remaining.Minutes}m", false)
-            : ($"{remaining.Minutes}m {remaining.Seconds}s", false);
+        return (CountdownClock.Format(remaining), false);
     }
 }

@@ -18,7 +18,7 @@ public partial class PostTradeViewModel : BaseViewModel
         _listings = listings;
         _storage = storage;
         _nav = nav;
-        Title = "Create an auction";
+        Title = "Post a listing";
 
         // Category and meetup location are left unset on purpose — both are required, and
         // a pre-picked value is a value nobody looked at. Condition keeps its default
@@ -34,6 +34,15 @@ public partial class PostTradeViewModel : BaseViewModel
     [ObservableProperty] private ItemCondition _condition;
     [ObservableProperty] private string _startingBidText = string.Empty;
     [ObservableProperty] private string _bidIncrementText = string.Empty;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsAuctionKind))]
+    [NotifyPropertyChangedFor(nameof(IsStandardKind))]
+    private ListingKind _kind = ListingKind.Auction;
+
+    /// <summary>Auction is the default. A set price or a swap hides the fields it does not use.</summary>
+    public bool IsAuctionKind => Kind == ListingKind.Auction;
+    public bool IsStandardKind => Kind == ListingKind.Standard;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsCategoryOther))]
@@ -78,7 +87,7 @@ public partial class PostTradeViewModel : BaseViewModel
 
     public long FeeCentavos => NUTradeConstants.FeeForPackage(SelectedPackage);
     public string FeeDisplay => Money.ToDisplay(FeeCentavos);
-    public string PublishText => FeeCentavos == 0 ? "Publish auction" : $"Continue to review · {FeeDisplay}";
+    public string PublishText => FeeCentavos == 0 ? "Publish listing" : $"Continue to review · {FeeDisplay}";
 
     public List<EnumOption<ItemCategory>> CategoryOptions { get; } =
     [
@@ -106,6 +115,12 @@ public partial class PostTradeViewModel : BaseViewModel
         new() { Value = CampusZone.Avr, Label = "AVR" },
         new() { Value = CampusZone.Other, Label = "Others" },
     ];
+
+    [RelayCommand]
+    private void SelectKind(string? key)
+    {
+        if (Enum.TryParse<ListingKind>(key, out var kind)) Kind = kind;
+    }
 
     [ObservableProperty] private EnumOption<ItemCategory>? _selectedCategoryOption;
     [ObservableProperty] private EnumOption<ItemCondition>? _selectedConditionOption;
@@ -224,14 +239,11 @@ public partial class PostTradeViewModel : BaseViewModel
             ErrorMessage = "Say which category your item belongs to.";
             return;
         }
-        if (!long.TryParse(StartingBidText.Trim(), out var startingPesos) || startingPesos <= 0)
+        var (startingBidCentavos, incrementCentavos, priceError) =
+            ListingKindRules.Normalize(Kind, StartingBidText, BidIncrementText);
+        if (priceError is not null)
         {
-            ErrorMessage = "Enter a valid starting bid.";
-            return;
-        }
-        if (!long.TryParse(BidIncrementText.Trim(), out var incrementPesos) || incrementPesos <= 0)
-        {
-            ErrorMessage = "Enter a valid bid increment.";
+            ErrorMessage = priceError;
             return;
         }
         if (CampusZone == CampusZone.Unknown)
@@ -256,8 +268,9 @@ public partial class PostTradeViewModel : BaseViewModel
             CampusZone = CampusZone,
             CampusZoneOther = IsMeetupOther ? CampusZoneOther.Trim() : string.Empty,
             Package = SelectedPackage,
-            StartingBidCentavos = Money.FromPesos(startingPesos),
-            MinIncrementCentavos = Money.FromPesos(incrementPesos),
+            Kind = Kind,
+            StartingBidCentavos = startingBidCentavos,
+            MinIncrementCentavos = incrementCentavos,
         };
 
         // Guards a double tap, which would otherwise stack two review screens.
@@ -284,6 +297,7 @@ public partial class PostTradeViewModel : BaseViewModel
     {
         ItemTitle = string.Empty;
         Description = string.Empty;
+        Kind = ListingKind.Auction;
         StartingBidText = string.Empty;
         BidIncrementText = string.Empty;
         CategoryOther = string.Empty;

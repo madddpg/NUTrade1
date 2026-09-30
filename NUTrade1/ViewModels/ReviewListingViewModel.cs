@@ -37,11 +37,20 @@ public partial class ReviewListingViewModel : BaseViewModel, IQueryAttributable
     [NotifyPropertyChangedFor(nameof(PackageDisplay))]
     [NotifyPropertyChangedFor(nameof(PaymentDisplay))]
     [NotifyPropertyChangedFor(nameof(IsFree))]
+    [NotifyPropertyChangedFor(nameof(ShowAuctionTerms))]
+    [NotifyPropertyChangedFor(nameof(IsSwap))]
+    [NotifyPropertyChangedFor(nameof(PriceCaption))]
     private Listing? _preview;
 
     public string StartingBidDisplay => Money.ToDisplay(Preview?.StartingBidCentavos ?? 0);
 
     public string IncrementDisplay => Money.ToDisplay(Preview?.MinIncrementCentavos ?? 0);
+
+    public bool ShowAuctionTerms => Preview?.IsAuction == true;
+
+    public bool IsSwap => Preview?.Kind == ListingKind.Swap;
+
+    public string PriceCaption => Preview?.Kind == ListingKind.Standard ? "PRICE" : "STARTING BID";
 
     private long FeeCentavos => NUTradeConstants.FeeForPackage(Preview?.Package ?? ListingPackage.Free);
 
@@ -68,8 +77,10 @@ public partial class ReviewListingViewModel : BaseViewModel, IQueryAttributable
             CampusZone = request.CampusZone,
             CampusZoneOther = request.CampusZoneOther,
             Package = request.Package,
+            Kind = request.Kind,
             StartingBidCentavos = request.StartingBidCentavos,
             MinIncrementCentavos = request.MinIncrementCentavos,
+            CurrentHighestBidCentavos = request.StartingBidCentavos,
         };
     }
 
@@ -92,7 +103,7 @@ public partial class ReviewListingViewModel : BaseViewModel, IQueryAttributable
             var result = await _listings.CreateDraftAsync(_request);
             if (!result.Succeeded || string.IsNullOrEmpty(result.Value))
             {
-                ErrorMessage = result.Error ?? "Could not create the auction.";
+                ErrorMessage = result.Error ?? "Could not create the listing.";
                 return;
             }
 

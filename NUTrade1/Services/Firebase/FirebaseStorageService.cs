@@ -20,11 +20,13 @@ public sealed class FirebaseStorageService : IStorageService
 
     private readonly HttpClient _http;
     private readonly IFirebaseTokenProvider _tokens;
+    private readonly ApiRateLimiter _limiter;
 
-    public FirebaseStorageService(HttpClient http, IFirebaseTokenProvider tokens)
+    public FirebaseStorageService(HttpClient http, IFirebaseTokenProvider tokens, ApiRateLimiter limiter)
     {
         _http = http;
         _tokens = tokens;
+        _limiter = limiter;
     }
 
     public async Task<OperationResult<string>> UploadAsync(
@@ -55,6 +57,7 @@ public sealed class FirebaseStorageService : IStorageService
             using var request = new HttpRequestMessage(HttpMethod.Post, url) { Content = content };
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
+            await _limiter.AcquireAsync(ct);
             using var response = await _http.SendAsync(request, ct);
             if (!response.IsSuccessStatusCode)
             {
@@ -100,6 +103,7 @@ public sealed class FirebaseStorageService : IStorageService
 
         try
         {
+            await _limiter.AcquireAsync(ct);
             using var response = await _http.SendAsync(request, ct);
             return response.IsSuccessStatusCode
                 ? OperationResult.Ok()

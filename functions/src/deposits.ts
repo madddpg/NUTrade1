@@ -12,11 +12,12 @@ import {
   BID_STATUS,
   DEPOSIT_INTENT_EXPIRY_MINUTES,
   DEPOSIT_STATUS,
+  LISTING_KIND,
   LISTING_STATUS,
-  QR_EXPIRY_SECONDS,
   REFUND_REASON,
   REGION,
   depositFor,
+  listingKind,
 } from "./constants";
 
 /**
@@ -84,6 +85,9 @@ export const requestBid = onCall(
     if (listing.ownerUid === auth.uid) {
       throw new HttpsError("failed-precondition", "You can't bid on your own listing.");
     }
+    if (listingKind(listing) !== LISTING_KIND.auction) {
+      throw new HttpsError("failed-precondition", "Only auctions take bids.");
+    }
     if (listing.status !== LISTING_STATUS.active) {
       throw new HttpsError("failed-precondition", "This auction isn't accepting bids.");
     }
@@ -135,7 +139,10 @@ export const requestBid = onCall(
       qrImageUrl: qr.qrImageUrl ?? null,
       qrImageBase64: qr.qrImageBase64 ?? null,
       qrPayload: qr.qrPayload ?? null,
-      qrExpiresAt: Timestamp.fromMillis(now.toMillis() + QR_EXPIRY_SECONDS * 1000),
+      // The code's own life is PayMongo's (about 30 minutes, seen live). The intent
+      // stays open for DEPOSIT_INTENT_EXPIRY_MINUTES either way, so a code that dies
+      // first can still be replaced before the sweep gives up.
+      qrExpiresAt: qrExpiresAtTimestamp(qr.expiresAt, now),
       expiresAt: Timestamp.fromMillis(now.toMillis() + DEPOSIT_INTENT_EXPIRY_MINUTES * 60_000),
       createdAt: now,
       resolvedAt: null,
@@ -154,10 +161,17 @@ export const requestBid = onCall(
       qrImageUrl: qr.qrImageUrl ?? null,
       qrImageBase64: qr.qrImageBase64 ?? null,
       qrPayload: qr.qrPayload ?? null,
-      expiresAt: now.toMillis() + QR_EXPIRY_SECONDS * 1000,
+      expiresAt: qrExpiresAtTimestamp(qr.expiresAt, now).toMillis(),
     };
   }
 );
+
+/** PayMongo's expiry when it sent one; otherwise the bid window, so the countdown is not a guess of 10 minutes. */
+function qrExpiresAtTimestamp(paymongoExpiresAt: string | undefined, now: Timestamp): Timestamp {
+  const parsed = paymongoExpiresAt ? Date.parse(paymongoExpiresAt) : NaN;
+  if (!Number.isNaN(parsed)) return Timestamp.fromMillis(parsed);
+  return Timestamp.fromMillis(now.toMillis() + DEPOSIT_INTENT_EXPIRY_MINUTES * 60_000);
+}
 
 /** Throws unless `amount` clears the listing's current bar. */
 function assertBidBeatsTheField(listing: FirebaseFirestore.DocumentData, amount: number): void {
@@ -226,6 +240,7 @@ export async function commitDeposit(
     const endsAt = listing.auctionEndsAt as Timestamp | undefined;
     const stale =
       intent.bidderUid === listing.ownerUid ||
+      listingKind(listing) !== LISTING_KIND.auction ||
       listing.status !== LISTING_STATUS.active ||
       (endsAt !== undefined && endsAt.toMillis() <= now.toMillis()) ||
       amount < minimumNextBid(listing);

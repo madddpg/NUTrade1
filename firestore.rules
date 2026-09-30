@@ -72,10 +72,23 @@ service cloud.firestore {
         // Feed visibility is decided at publish time by visibilityFor(), not by the
         // client — it is the whole substance of the Priority fee.
         && request.resource.data.isVisible == false
-        && request.resource.data.startingBidCentavos is int
-        && request.resource.data.startingBidCentavos > 0
-        && request.resource.data.minIncrementCentavos is int
-        && request.resource.data.minIncrementCentavos > 0
+        // Auction needs a starting bid and an increment. Standard is a price with no
+        // increment. Swap stores zeros. Older listings have no kind and stay auctions.
+        && request.resource.data.kind in ['Auction', 'Standard', 'Swap']
+        && (
+          (request.resource.data.kind == 'Auction'
+            && request.resource.data.startingBidCentavos is int
+            && request.resource.data.startingBidCentavos > 0
+            && request.resource.data.minIncrementCentavos is int
+            && request.resource.data.minIncrementCentavos > 0)
+          || (request.resource.data.kind == 'Standard'
+            && request.resource.data.startingBidCentavos is int
+            && request.resource.data.startingBidCentavos > 0
+            && request.resource.data.minIncrementCentavos == 0)
+          || (request.resource.data.kind == 'Swap'
+            && request.resource.data.startingBidCentavos == 0
+            && request.resource.data.minIncrementCentavos == 0)
+        )
         // "Add up to 4 photos": MAX_LISTING_PHOTOS / NUTradeConstants.MaxListingPhotos.
         // Checked here because a listing can't be edited after creation (update is
         // denied below), so this is the one place the photo count is ever set.

@@ -16,6 +16,8 @@ public partial class ProfileViewModel : BaseViewModel
     private readonly IWalletService _wallet;
     private readonly IPayoutModerationService _payouts;
     private readonly INavigationService _nav;
+    private readonly ILocalCache _cache;
+    private DateTimeOffset? _profileSavedAt;
 
     public ProfileViewModel(
         IAuthService auth,
@@ -25,7 +27,8 @@ public partial class ProfileViewModel : BaseViewModel
         IListingModerationService moderation,
         IWalletService wallet,
         IPayoutModerationService payouts,
-        INavigationService nav)
+        INavigationService nav,
+        ILocalCache cache)
     {
         _auth = auth;
         _users = users;
@@ -35,6 +38,7 @@ public partial class ProfileViewModel : BaseViewModel
         _wallet = wallet;
         _payouts = payouts;
         _nav = nav;
+        _cache = cache;
         Title = "Profile";
     }
 
@@ -76,10 +80,17 @@ public partial class ProfileViewModel : BaseViewModel
     {
         // The skeleton only while there is no profile on screen yet. Coming back to the
         // tab, or reloading after a bid decision, refreshes behind what is already shown.
+        if (Profile is null)
+            await TryPaintCachedProfileAsync();
+
         IsLoading = Profile is null;
         try
         {
             await LoadAsync();
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException && Profile is not null)
+        {
+            // The saved profile stays on screen when the refresh cannot reach Firestore.
         }
         finally
         {
@@ -99,7 +110,12 @@ public partial class ProfileViewModel : BaseViewModel
 
         // The profile, the listings and the approval queue do not depend on each other, so
         // they go out together rather than as three round trips in a row.
-        var profileTask = _users.GetCurrentProfileAsync();
+        var skipProfileNetwork = Profile is not null
+            && _profileSavedAt is { } saved
+            && LocalCachePolicy.IsFresh(saved, DateTimeOffset.UtcNow);
+        var profileTask = skipProfileNetwork
+            ? Task.FromResult(Profile)
+            : _users.GetCurrentProfileAsync();
         var listingsTask = _listings.GetMyListingsAsync();
         var walletTask = _wallet.GetWalletAsync();
         var pendingTask = IsAdmin ? _moderation.GetPendingListingsAsync() : null;
@@ -107,6 +123,8 @@ public partial class ProfileViewModel : BaseViewModel
 
         Profile = await profileTask;
         RatingText = Profile?.Rating is { } r ? r.ToString("0.0") : "New";
+        if (!skipProfileNetwork && Profile is not null)
+            await RememberProfileAsync(Profile);
 
         var mine = await listingsTask;
         MyListings.ReplaceAll(mine);
@@ -136,6 +154,37 @@ public partial class ProfileViewModel : BaseViewModel
         if (payoutsTask is not null) PendingPayoutCount = (await payoutsTask).Count;
     }
 
+    private async Task TryPaintCachedProfileAsync()
+    {
+        if (_auth.CurrentUid is not { } uid) return;
+        try
+        {
+            var snapshot = await _cache.ReadProfileAsync(uid);
+            if (snapshot?.Profile is not { Uid: { Length: > 0 } } profile) return;
+            Profile = profile;
+            _profileSavedAt = snapshot.SavedAt;
+            RatingText = profile.Rating is { } r ? r.ToString("0.0") : "New";
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            // A bad cache file just means the page waits for the network.
+        }
+    }
+
+    private async Task RememberProfileAsync(UserProfile profile)
+    {
+        var savedAt = DateTimeOffset.UtcNow;
+        _profileSavedAt = savedAt;
+        try
+        {
+            await _cache.WriteProfileAsync(new ProfileSnapshot { SavedAt = savedAt, Profile = profile });
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            // The profile is already on screen.
+        }
+    }
+
     /// <summary>
     /// Registration asks for the program, but accounts made before it did — and Google
     /// sign-ins — have none, and anyone can pick the wrong one. This is where it's fixed.
@@ -159,6 +208,7 @@ public partial class ProfileViewModel : BaseViewModel
                 return;
             }
             Profile = await _users.GetCurrentProfileAsync();
+            if (Profile is not null) await RememberProfileAsync(Profile);
             InfoMessage = $"Program set to {choice}.";
         }
         finally

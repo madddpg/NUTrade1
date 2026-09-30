@@ -79,7 +79,7 @@ public sealed class FirestoreListingService : IListingService
     {
         if (_auth.CurrentUid is not { } uid) return OperationResult<string>.Fail("Sign in to continue.");
         if (!_auth.IsVerified)
-            return OperationResult<string>.Fail("Your student ID is still being reviewed — you can't post auctions yet.");
+            return OperationResult<string>.Fail("Your student ID is still being reviewed — you can't post listings yet.");
 
         // Photos go to Storage first: the listing document stores download URLs, and a
         // half-written draft is better than a draft pointing at files that never landed.
@@ -108,6 +108,7 @@ public sealed class FirestoreListingService : IListingService
             ["campusZone"] = Fs.Enum(request.CampusZone),
             ["campusZoneOther"] = Fs.Str(request.CampusZoneOther),
             ["package"] = Fs.Enum(request.Package),
+            ["kind"] = Fs.Enum(request.Kind),
             ["startingBidCentavos"] = Fs.Int(request.StartingBidCentavos),
             ["minIncrementCentavos"] = Fs.Int(request.MinIncrementCentavos),
             ["reservePriceCentavos"] = Fs.Int(request.ReservePriceCentavos),
@@ -182,7 +183,7 @@ public sealed class FirestoreListingService : IListingService
         var listing = await GetListingAsync(listingId, ct);
         if (listing is null) return OperationResult.Fail("That listing no longer exists.");
         if (listing.Status != ListingStatus.Draft)
-            return OperationResult.Fail("A published auction can't be cancelled from the app.");
+            return OperationResult.Fail("A published listing can't be cancelled from the app.");
 
         try
         {
@@ -222,6 +223,8 @@ public sealed class FirestoreListingService : IListingService
             CampusZone = Fs.Enum(fields, "campusZone", CampusZone.Unknown),
             CampusZoneOther = Fs.StringOr(fields, "campusZoneOther"),
             Package = Fs.Enum(fields, "package", ListingPackage.Free),
+            // Documents from before listing kinds are auctions.
+            Kind = Fs.Enum(fields, "kind", ListingKind.Auction),
             IsPinned = Fs.Bool(fields, "isPinned"),
             Status = WireCodec.ToListingStatus(Fs.String(fields, "status")),
             StartingBidCentavos = Fs.Long(fields, "startingBidCentavos"),

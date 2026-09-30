@@ -21,6 +21,7 @@ public partial class BidDepositViewModel : BaseViewModel
     private readonly IDepositService _deposits;
     private readonly INavigationService _nav;
     private CancellationTokenSource? _polling;
+    private SecondClock? _expiryClock;
     private bool _announced;
 
     public BidDepositViewModel(IDepositService deposits, INavigationService nav)
@@ -74,8 +75,8 @@ public partial class BidDepositViewModel : BaseViewModel
         : string.Empty;
 
     public string ExpiryText => Deposit?.QrExpiresAt is { } at
-        ? $"This code works until {at.ToLocalTime():h:mm tt}."
-        : "QR codes expire about 30 minutes after they're generated.";
+        ? $"Expires in {CountdownClock.Format(at - DateTimeOffset.UtcNow)}"
+        : string.Empty;
 
     public override async Task OnAppearingAsync()
     {
@@ -92,12 +93,15 @@ public partial class BidDepositViewModel : BaseViewModel
         {
             IsLoading = false;
         }
+        _expiryClock ??= new SecondClock(() => OnPropertyChanged(nameof(ExpiryText)));
         StartPolling();
     }
 
     public override Task OnDisappearingAsync()
     {
         StopPolling();
+        _expiryClock?.Dispose();
+        _expiryClock = null;
         return Task.CompletedTask;
     }
 

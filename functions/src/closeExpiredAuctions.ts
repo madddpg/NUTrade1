@@ -2,7 +2,7 @@ import { onSchedule } from "firebase-functions/v2/scheduler";
 import * as logger from "firebase-functions/logger";
 import { Timestamp } from "firebase-admin/firestore";
 import { db } from "./admin";
-import { BID_STATUS, LISTING_STATUS, REFUND_REASON, REGION } from "./constants";
+import { BID_STATUS, LISTING_KIND, LISTING_STATUS, REFUND_REASON, REGION, listingKind } from "./constants";
 import { awardListing } from "./matching";
 import { readDepositForBid, resolveDeposit } from "./depositResolution";
 
@@ -47,6 +47,8 @@ export const closeExpiredAuctions = onSchedule(
           // Re-check inside the transaction: a seller may have approved a bid
           // manually between the sweep query and now.
           if (listing.status !== LISTING_STATUS.active) return "skipped";
+          // A set-price or swap listing is not an auction, even if something wrote an end time.
+          if (listingKind(listing) !== LISTING_KIND.auction) return "skipped";
           const endsAt = listing.auctionEndsAt as Timestamp | undefined;
           if (!endsAt || endsAt.toMillis() > now.toMillis()) return "skipped";
 

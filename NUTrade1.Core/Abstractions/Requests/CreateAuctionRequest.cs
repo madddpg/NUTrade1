@@ -23,6 +23,9 @@ public sealed class CreateAuctionRequest
     public string CampusZoneOther { get; set; } = string.Empty;
     public ListingPackage Package { get; set; } = ListingPackage.Free;
 
+    /// <summary>Auction unless the seller picked a set price or a swap.</summary>
+    public ListingKind Kind { get; set; } = ListingKind.Auction;
+
     public long StartingBidCentavos { get; set; }
     public long MinIncrementCentavos { get; set; }
     public long? ReservePriceCentavos { get; set; }

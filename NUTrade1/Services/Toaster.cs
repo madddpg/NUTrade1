@@ -11,9 +11,14 @@ public enum ToastKind
 /// something that went wrong stays long enough to read twice.</summary>
 public sealed record Toast(ToastKind Kind, string Message)
 {
-    public TimeSpan Duration => Kind == ToastKind.Error
-        ? TimeSpan.FromSeconds(5)
-        : TimeSpan.FromSeconds(3);
+    public TimeSpan Duration => Kind switch
+    {
+        ToastKind.Error => TimeSpan.FromSeconds(5),
+        // The request limiter's notice is an Info toast, and it has to stay up long
+        // enough to read that paying or bidding may slow down.
+        ToastKind.Info => TimeSpan.FromSeconds(6),
+        _ => TimeSpan.FromSeconds(3),
+    };
 }
 
 /// <summary>

@@ -10,6 +10,7 @@ public partial class FeedViewModel : BaseViewModel
 {
     private readonly IListingService _listings;
     private readonly INavigationService _nav;
+    private readonly ILocalCache _cache;
     private string? _cursor;
     private IDispatcherTimer? _countdownTimer;
 
@@ -27,18 +28,23 @@ public partial class FeedViewModel : BaseViewModel
     /// Home cost two full Firestore queries and showed an empty list in between. Regular
     /// listings only join the feed on the hour anyway (publishScheduledListings), so a
     /// minute of staleness hides nothing; pull-to-refresh and the filter button still
-    /// force a read.
+    /// force a read. A cold start is different: the on-device copy is shown first and
+    /// skipped as a network read while it is younger than <see cref="LocalCachePolicy.MaxAge"/>.
     /// </summary>
     private static readonly TimeSpan FeedFreshFor = TimeSpan.FromSeconds(60);
 
     private DateTimeOffset _loadedAt;
+    private DateTimeOffset? _cacheSavedAt;
 
-    public FeedViewModel(IListingService listings, INavigationService nav)
+    public FeedViewModel(IListingService listings, INavigationService nav, ILocalCache cache)
     {
         _listings = listings;
         _nav = nav;
+        _cache = cache;
         Title = "Home";
     }
+
+    private string CategoryKey => SelectedCategory?.ToString() ?? string.Empty;
 
     public ObservableRangeCollection<Listing> Listings { get; } = new();
 
@@ -58,10 +64,18 @@ public partial class FeedViewModel : BaseViewModel
 
     public override async Task OnAppearingAsync()
     {
-        // Nothing on screen yet: the skeleton stands in for the feed. A stale feed that is
-        // already showing is refreshed quietly behind the cards the student is looking at.
+        // Nothing on screen yet: paint the saved feed first, then fetch only when that
+        // copy is missing or older than an hour. A stale feed that is already showing is
+        // refreshed quietly behind the cards the student is looking at.
         if (Listings.Count == 0)
-            await LoadFeedAsync(showSkeleton: true);
+        {
+            var painted = await TryPaintCachedFeedAsync();
+            var fresh = painted && _cacheSavedAt is { } saved && LocalCachePolicy.IsFresh(saved, DateTimeOffset.UtcNow);
+            if (fresh)
+                _loadedAt = DateTimeOffset.UtcNow;
+            else
+                await LoadFeedAsync(showSkeleton: !painted);
+        }
         else if (DateTimeOffset.UtcNow - _loadedAt >= FeedFreshFor)
             await LoadFeedAsync(showSkeleton: false);
 
@@ -86,9 +100,13 @@ public partial class FeedViewModel : BaseViewModel
     {
         if (IsBusy) return;
         IsBusy = true;
+        List<Listing>? backup = null;
+        var committed = false;
         if (showSkeleton)
         {
+            backup = _fetched.ToList();
             Listings.Clear();
+            _fetched.Clear();
             OnPropertyChanged(nameof(HasListings));
             IsLoading = true;
         }
@@ -100,12 +118,68 @@ public partial class FeedViewModel : BaseViewModel
             _fetched.Clear();
             _fetched.AddRange(page.Items);
             ApplySearch();
+            committed = true;
+            await RememberFeedAsync(page);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            if (backup is not { Count: > 0 } && _fetched.Count == 0)
+                ErrorMessage = "Couldn't refresh the feed. Pull to try again.";
         }
         finally
         {
+            // A failed or cancelled refresh must not wipe the copy already on screen.
+            if (!committed && _fetched.Count == 0 && backup is { Count: > 0 })
+            {
+                _fetched.AddRange(backup);
+                ApplySearch();
+            }
             IsBusy = false;
             IsLoading = false;
             OnPropertyChanged(nameof(ShowEmptyState));
+        }
+    }
+
+    /// <summary>Shows the saved feed for this filter. Returns false when there is nothing saved.</summary>
+    private async Task<bool> TryPaintCachedFeedAsync()
+    {
+        FeedSnapshot? snapshot;
+        try
+        {
+            snapshot = await _cache.ReadFeedAsync(CategoryKey);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            return false;
+        }
+
+        if (snapshot is not { Items.Count: > 0 }) return false;
+
+        _cacheSavedAt = snapshot.SavedAt;
+        _cursor = snapshot.NextCursor;
+        _fetched.Clear();
+        _fetched.AddRange(snapshot.Items.Select(item => item.ToListing()));
+        ApplySearch();
+        return true;
+    }
+
+    private async Task RememberFeedAsync(ListingPage page)
+    {
+        var savedAt = DateTimeOffset.UtcNow;
+        _cacheSavedAt = savedAt;
+        try
+        {
+            await _cache.WriteFeedAsync(new FeedSnapshot
+            {
+                SavedAt = savedAt,
+                CategoryKey = CategoryKey,
+                NextCursor = page.NextCursor,
+                Items = page.Items.Select(CachedListing.From).ToList(),
+            });
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            // The feed is already on screen. A cache write is not worth an error toast.
         }
     }
 

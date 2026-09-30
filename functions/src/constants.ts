@@ -34,6 +34,25 @@ export function feeForPackage(pkg: ListingPackage): number {
 /** Every function in this codebase deploys to the same Manila-adjacent region. */
 export const REGION = "asia-southeast1";
 
+/**
+ * How a listing is offered. Member names match ListingKind in the app.
+ * A document with no `kind` (everything written before this field) is an auction.
+ */
+export const LISTING_KIND = {
+  auction: "Auction",
+  standard: "Standard",
+  swap: "Swap",
+} as const;
+
+export type ListingKindName = (typeof LISTING_KIND)[keyof typeof LISTING_KIND];
+
+export function listingKind(listing: { kind?: unknown }): ListingKindName {
+  if (listing.kind === LISTING_KIND.standard || listing.kind === LISTING_KIND.swap) {
+    return listing.kind;
+  }
+  return LISTING_KIND.auction;
+}
+
 /** Firestore string values for ListingStatus / BidStatus, mirrored from the .NET enums. */
 export const LISTING_STATUS = {
   draft: "draft",
@@ -280,5 +299,9 @@ export const REFUND_REASON = {
   auctionLost: "auction_lost",
 } as const;
 
-/** A bid intent whose deposit never arrives is swept after this long. */
-export const DEPOSIT_INTENT_EXPIRY_MINUTES = 15;
+/**
+ * A bid intent whose deposit never arrives is swept after this long.
+ * The on-screen QR countdown uses PayMongo's own expiry when it sends one, and this
+ * window otherwise, so the clock the student sees is the time they still have to pay.
+ */
+export const DEPOSIT_INTENT_EXPIRY_MINUTES = 30;

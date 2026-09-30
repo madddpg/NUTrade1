@@ -2,7 +2,14 @@ import { onDocumentUpdated } from "firebase-functions/v2/firestore";
 import * as logger from "firebase-functions/logger";
 import { DocumentReference, DocumentData, Timestamp } from "firebase-admin/firestore";
 import { db } from "./admin";
-import { AUCTION_DURATION_HOURS, LISTING_STATUS, ListingPackage, REGION } from "./constants";
+import {
+  AUCTION_DURATION_HOURS,
+  LISTING_KIND,
+  LISTING_STATUS,
+  ListingPackage,
+  REGION,
+  listingKind,
+} from "./constants";
 import { paymongoSecretKey } from "./createQrPayment";
 import { goLiveFields } from "./listingApproval";
 import { verifyListingFees } from "./listingFees";
@@ -54,19 +61,23 @@ async function onApproved(ref: DocumentReference, listingId: string, listing: Do
   if (listing.visibleFrom == null) {
     const pkg = (listing.paidPackage as ListingPackage | undefined) ?? "Free";
     const approvedAt = (listing.approvedAt as Timestamp | undefined) ?? Timestamp.now();
-    const live = goLiveFields(pkg, approvedAt);
+    const kind = listingKind(listing);
+    const live = goLiveFields(pkg, approvedAt, kind);
 
     // The panel's own countdown is kept where it wrote one — the seller may already
     // have seen it — and the feed slot counts from the panel's approval, not from now.
     // It has written auctionEndsAt as an ISO string, which closeExpiredAuctions' range
     // query and the app both skip, so only a real timestamp is kept as-is.
+    // A set price or a swap must not keep that clock: the closer would expire it.
     await ref.update({
       isPinned: live.isPinned,
       isVisible: live.isVisible,
       visibleFrom: live.visibleFrom,
       publishedAt: asTimestamp(listing.publishedAt) ?? approvedAt,
-      auctionEndsAt: asTimestamp(listing.auctionEndsAt) ??
-        Timestamp.fromMillis(approvedAt.toMillis() + AUCTION_DURATION_HOURS * 3_600_000),
+      auctionEndsAt: kind === LISTING_KIND.auction
+        ? asTimestamp(listing.auctionEndsAt) ??
+          Timestamp.fromMillis(approvedAt.toMillis() + AUCTION_DURATION_HOURS * 3_600_000)
+        : null,
     });
     isVisible = live.isVisible;
     logger.info("onListingUpdated: completed a web-panel approval", { listingId, pkg });
@@ -75,8 +86,8 @@ async function onApproved(ref: DocumentReference, listingId: string, listing: Do
   await notifyUser(listing.ownerUid as string, {
     title: "Your listing was approved",
     body: isVisible
-      ? "Your auction is now live on the campus feed."
-      : "Your auction joins the campus feed at the next hourly refresh.",
+      ? "Your listing is now live on the campus feed."
+      : "Your listing joins the campus feed at the next hourly refresh.",
     data: { listingId, type: "listing_approved" },
   });
 }

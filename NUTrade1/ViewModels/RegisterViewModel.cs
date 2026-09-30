@@ -78,7 +78,9 @@ public partial class RegisterViewModel : BaseViewModel
     };
 
     public bool CanResend => ResendInSeconds <= 0;
-    public string ResendText => CanResend ? "Send another code" : $"Send another code in {ResendInSeconds}s";
+    public string ResendText => CanResend
+        ? "Send another code"
+        : $"Send another code in {CountdownClock.Format(TimeSpan.FromSeconds(ResendInSeconds))}";
 
     public override Task OnDisappearingAsync()
     {

@@ -43,20 +43,26 @@
                             <Label Text="{Binding Preview.Description}" FontFamily="InterRegular" FontSize="13" LineHeight="1.3"
                                    TextColor="#3F4A5E" IsVisible="{Binding Preview.Description, Converter={StaticResource HasValue}}" />
 
-                            <Grid ColumnDefinitions="Auto,Auto" ColumnSpacing="28">
+                            <Label Text="{Binding Preview.KindLabel}" FontFamily="InterBold" FontSize="12"
+                                   TextColor="{StaticResource NuNavy}" />
+
+                            <Grid ColumnDefinitions="Auto,Auto" ColumnSpacing="28" IsVisible="{Binding IsSwap, Converter={StaticResource InvertBool}}">
                                 <VerticalStackLayout Grid.Column="0" Spacing="1">
-                                    <Label Text="STARTING BID" FontFamily="InterMedium" FontSize="9.5" CharacterSpacing="0.3"
+                                    <Label Text="{Binding PriceCaption}" FontFamily="InterMedium" FontSize="9.5" CharacterSpacing="0.3"
                                            TextColor="{StaticResource InkMuted}" />
                                     <Label Text="{Binding StartingBidDisplay}" FontFamily="InterBold" FontSize="19"
                                            TextColor="{StaticResource Ink}" />
                                 </VerticalStackLayout>
-                                <VerticalStackLayout Grid.Column="1" Spacing="1">
+                                <VerticalStackLayout Grid.Column="1" Spacing="1" IsVisible="{Binding ShowAuctionTerms}">
                                     <Label Text="BID INCREMENT" FontFamily="InterMedium" FontSize="9.5" CharacterSpacing="0.3"
                                            TextColor="{StaticResource InkMuted}" />
                                     <Label Text="{Binding IncrementDisplay}" FontFamily="InterBold" FontSize="19"
                                            TextColor="{StaticResource Ink}" />
                                 </VerticalStackLayout>
                             </Grid>
+
+                            <Label Text="Open swap" FontFamily="InterBold" FontSize="19" TextColor="{StaticResource Ink}"
+                                   IsVisible="{Binding IsSwap}" />
 
                             <HorizontalStackLayout Spacing="5">
                                 <Path Style="{StaticResource IconMapMarker}" HeightRequest="13" WidthRequest="13"
