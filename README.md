@@ -77,6 +77,9 @@ would send the student out to a web page. Completing a reset signs every other d
 | `verifyEmailOtp` | callable | Checks the code and grants the `verified` claim |
 | `startSignup` / `verifySignupCode` / `completeSignup` | callable | Registration, code first; nothing is created until the code is proven |
 | `startPasswordReset` / `verifyPasswordResetCode` / `completePasswordReset` | callable | Forgot password, same shape; the last one also revokes every refresh token |
+| `setUserVerification` | callable | Admin-only; revokes (or restores) the `verified` claim |
+| `bootstrapAdmin` | HTTPS | Secret-gated; mints the first admin account |
+| `seedDevData` | callable | Admin-only Firestore seeder (see below) |
 
 Every endpoint that mails a code also charges it against a per-address allowance —
 `OTP_MAX_SENDS_PER_WINDOW` codes per `OTP_SEND_WINDOW_MINUTES`, counted in
@@ -84,9 +87,21 @@ Every endpoint that mails a code also charges it against a per-address allowance
 *total*, which is what stops a script parked on one address at a code a minute. Add a
 Firestore **TTL policy on `mailRateLimits.expiresAt`** so spent counters are swept —
 without one the collection grows a document per address forever.
-| `setUserVerification` | callable | Admin-only; revokes (or restores) the `verified` claim |
-| `bootstrapAdmin` | HTTPS | Secret-gated; mints the first admin account |
-| `seedDevData` | callable | Admin-only Firestore seeder (see below) |
+
+## Web admin panel
+
+The MAUI app and the web admin panel are one system. They share the `nutrade-a25c7`
+project and **one** Firestore database, `(default)` — not a separate `web` database.
+The panel reads the app's collections (`listings`, `users`, `transactions`,
+`payoutRequests`, `disputes`, …) and changes them only by calling this repo's Cloud
+Functions (`approveListing`, `rejectListing`, `markPayoutPaid`, `resolveDispute`, …).
+
+Rules are deployed from this repo only. A `firebase deploy` from the web repo must not
+ship its own `firestore.rules`, and it must not redeploy `paymongoWebhook`,
+`approveListing`, `rejectListing` or `createQrPayment` under those names.
+
+Wiring, field names and the callables the panel should use:
+[`docs/web-panel-database.md`](docs/web-panel-database.md).
 
 ## Seeding real data
 

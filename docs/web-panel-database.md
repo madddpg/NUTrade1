@@ -1,110 +1,147 @@
-# Web admin panel: its own Firestore database
+# Web admin panel: one database with the app
 
-The app and the web admin panel share one Firebase project (`nutrade-a25c7`). A Firestore
-database has exactly **one** set of security rules, so while both lived in the same database,
-each side's `firebase deploy` replaced the other's rules: the app lost access to wallets,
-chats and orders, and the panel lost its collections.
+The MAUI app and the web admin panel share one Firebase project (`nutrade-a25c7`) and
+**one** Firestore database, `(default)`. There is no second database. The panel reads the
+app's collections and changes them only through the app's Cloud Functions.
 
-From now on:
+A Firestore database has exactly one set of security rules. Those rules live in this
+repo (`firestore.rules`) and are deployed from this repo only. A deploy from the web
+repo must not replace them.
 
-| | App | Web admin panel |
-|---|---|---|
-| Database | `(default)` | `web` (new) |
-| Rules file | `firestore.rules` in the app repo | `firestore.web.rules` in the web repo |
-| Deployed from | the app repo only | the web repo only |
-| Holds | users, listings, bids, chats, orders, payments, transactions, wallets, payouts… | admin_security_codes, notifications, marketplace, products, items, posts |
+## 1. Stop treating the panel as a second system
 
-The panel still **reads** app data (listings, users, payments, transactions, payouts) from
-`(default)` as an admin, and changes listings only through the app's Cloud Functions.
+| Do this | Not this |
+|---|---|
+| `getFirestore(app)` — `(default)` | `getFirestore(app, "web")` |
+| This repo's `firestore.rules` | `firestore.web.rules`, or any rules file in the web repo |
+| This repo's functions (`codebase: "default"`) | A second `approveListing`, `rejectListing`, `createQrPayment`, or `paymongoWebhook` |
+| `listings`, `users`, `transactions`, … | `marketplace`, `products`, `items`, `posts` |
 
-## 1. Create the `web` database (once)
+Do not create a database named `web`. If one already exists, leave it. Live data is in
+`(default)`, and nothing in the app reads the other one.
 
-```
-firebase firestore:databases:create web --location nam5 --project nutrade-a25c7
-```
+The web repo's `firebase.json` must not deploy Firestore rules. Drop the `firestore`
+block. With `"database": "web"` it maintains a database the app ignores; without a
+database name it targets `(default)` and replaces the app's rules, which is how the app
+lost wallets, chats and orders the last time both sides deployed.
 
-`nam5` matches `(default)`. Any location works; it can't be changed later.
+Functions share one namespace per project and region (`asia-southeast1`). A function
+deployed under an app function's name replaces the app's. The panel's own
+`paymongoWebhook` has already done that once, and it accepted unsigned
+`payment.paid` events. Do not deploy it again. If the web repo still ships functions,
+give them `"codebase": "web"` and names that do not collide, and delete the duplicates:
+`approveListing`, `rejectListing`, `createQrPayment`, `paymongoWebhook`.
 
-## 2. Web repo `firebase.json`: name the database
-
-The `firestore` entry **must** name `web`. Without `"database"`, it targets `(default)` and
-wipes the app's rules again.
-
-```json
-{
-  "firestore": { "database": "web", "rules": "firestore.web.rules" }
-}
-```
-
-Keep it a single object, not an array. In the array form, `firebase deploy --only
-firestore:rules` treats `rules` as a database name, matches nothing, and silently deploys
-no rules at all.
-
-The app repo's `firebase.json` names `(default)` the same way, so neither repo can touch the
-other's rules.
-
-## 3. `firestore.web.rules` (starting point)
-
-Rules in the `web` database can only see documents in `web`, so admin checks use custom
-claims, not a lookup in `(default)`.
-
-```
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    function isSignedIn() { return request.auth != null; }
-    function isAdmin() {
-      return isSignedIn() && (
-        request.auth.token.get('role', '') == 'admin'
-        || request.auth.token.get('admin', false) == true
-      );
-    }
-
-    // Second-factor codes for admin sign-in.
-    match /admin_security_codes/{codeId} {
-      allow read, write: if isAdmin();
-    }
-
-    // Notices to a student: the recipient reads theirs, only admins write.
-    match /notifications/{notificationId} {
-      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
-      allow write: if isAdmin();
-    }
-
-    match /marketplace/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
-    match /products/{id}    { allow read: if isSignedIn(); allow write: if isAdmin(); }
-    match /items/{id}       { allow read: if isSignedIn(); allow write: if isAdmin(); }
-    match /posts/{id}       { allow read: if isSignedIn(); allow write: if isAdmin(); }
-  }
-}
-```
-
-## 4. Panel code
+## 2. Open the shared database
 
 ```js
 import { getFirestore } from "firebase/firestore";
 import { getFunctions, httpsCallable } from "firebase/functions";
 
-const appDb = getFirestore(app);         // (default): listings, users, payments… read-only
-const webDb = getFirestore(app, "web");  // the panel's own collections
-
+const db = getFirestore(app); // (default) — the only database
 const functions = getFunctions(app, "asia-southeast1");
-await httpsCallable(functions, "approveListing")({ listingId });
-await httpsCallable(functions, "rejectListing")({ listingId, reason });
 ```
 
-- **Approve or reject only through those two callables.** The app's rules refuse direct
-  writes to listings. The callables set the auction clock, the feed slot (Priority shows at
-  once and is pinned; Free and Additional join at the next hourly refresh) and notify the
-  seller.
-- Revenue: the app writes `transactions` in `(default)` in the panel's shape (`amount` in
-  pesos, `packageType`, `status`, `timestamp`, `userEmail`).
+The panel is a client. `firestore.rules` lets a signed-in admin **read** the collections
+below and lets **nobody** write them from the client, admin included. Listing status,
+bids, payments, wallets and payouts all move inside Cloud Functions.
+
+## 3. Read the app's collections
+
+Amounts on listings, bids, wallets and payouts are **centavos**. Listing-fee rows in
+`transactions` also carry `amount` in pesos, which is the figure to show as revenue.
+Times are Firestore timestamps. An ISO string in `auctionEndsAt` is skipped by the app
+and by `closeExpiredAuctions`, so the panel must not write listing times itself.
+
+### `listings/{id}` — the moderation queue
+
+Query `status == "pending_approval"`. The seller is `ownerUid` (the same uid is also
+stored as `sellerUid`). The fee that was actually paid is `paidPackage` (`"Free"`,
+`"Additional"`, or `"Priority"`), not the draft's `package`. Approval honours
+`paidPackage`.
+
+Other fields the queue needs: `title`, `description`, `photos` (1–4 download URLs),
+`condition` (`New`, `LikeNew`, `Good`, `Worn`), `category` (`Uniforms`, `Textbooks`,
+`AcademicSupplies`, `Other`) plus `categoryOther`, `campusZone` plus `campusZoneOther`,
+`startingBidCentavos`, `minIncrementCentavos`, `submittedForApprovalAt`.
+
+Status values, in order: `draft`, `pending_payment`, `pending_approval`, `active`,
+`matched`, `pending_meetup`, `completed`, `expired`, `cancelled`, `rejected`.
+
+### `users/{uid}`
+
+`displayName`, `firstName`, `lastName`, `email`, `program` (`SACE`, `SAHS`, `SABM`,
+`SHS`), `photoUrl`, `tradesCompleted`, `verificationStatus`, `role`. A new account is
+already `verificationStatus: "verified"` because signup proves the email with a
+one-time code. There is no Student ID review queue. `studentId` is blank on new
+accounts.
+
+### Revenue
+
+`transactions` is the ledger. Each paid listing fee is one document: `amount` (pesos),
+`amountCentavos`, `packageType`, `status` (`"paid"`), `timestamp`, `userId`,
+`userEmail`, `listingId`, `paymentId`. `counters/revenue` holds `grossCentavos` and
+`transactionCount`.
+
+`payments/{id}` is the QR attempt behind a fee (`uid`, `listingId`, `amount`,
+`package`, `status`). Admins can read it; students can read only their own.
+
+### Payouts and disputes
+
+`payoutRequests` with `status == "requested"` is the cash-out queue. Fields: `uid`,
+`amountCentavos`, `method` (`"gcash"` or `"maya"`), `accountName`, `accountNumber`,
+`createdAt`. The wallet was already debited when the student asked.
+
+`wallets/{uid}` is `balanceCentavos` (spendable now, not "earned so far").
+`ledgerEntries` is the append-only explanation: `uid`, `kind` (`deposit_credit`,
+`refund_credit`, `payout`), `amountCentavos` (negative when money leaves), `createdAt`.
+
+`disputes` with `status == "open"` is a no-show report. Fields: `listingTitle`,
+`sellerUid`, `buyerUid`, `depositCentavos`, `note`, `chatId`.
+
+## 4. Change data only through these callables
+
+Every one of these requires the `role: "admin"` custom claim (see below). Pass the
+argument names exactly.
+
+```js
+await httpsCallable(functions, "approveListing")({ listingId });
+await httpsCallable(functions, "rejectListing")({ listingId, reason });
+
+await httpsCallable(functions, "markPayoutPaid")({ payoutRequestId });
+await httpsCallable(functions, "declinePayout")({ payoutRequestId, reason });
+
+await httpsCallable(functions, "resolveDispute")({ disputeId, resolution: "forfeit" });
+// resolution is "forfeit" or "refund"
+
+await httpsCallable(functions, "setUserVerification")({ uid, verified: false, reason });
+```
+
+`approveListing` starts the 24-hour auction at approval, not at payment. Priority
+(`paidPackage == "Priority"`) is pinned and visible immediately. Free and Additional
+stay `isVisible: false` until the next hourly refresh (`visibleFrom`). The seller is
+notified by `onListingUpdated`; the panel does not write a notification document.
+
+`rejectListing` is terminal. `reason` is shown to the seller, trimmed to 300
+characters. A paid fee is not refunded here.
+
+`markPayoutPaid` records that an admin sent the money by hand. `declinePayout` returns
+the held balance. Neither moves money through PayMongo.
+
+`resolveDispute` with `"forfeit"` keeps the buyer's deposit and adds a strike.
+`"refund"` returns it as in-app credit.
+
+`setUserVerification` revokes or restores the `verified` custom claim. It is not how a
+student becomes verified in the first place — `completeSignup` does that.
+
+Do not update `listings` from the client, including the Admin SDK path inside a
+duplicate function. Direct writes skip the auction clock, the pin, and the feed slot.
 
 ## 5. Admin accounts
 
-The app's rules and callables recognise admins by custom claim only. Emails, an `admins`
-collection and `role` on the user's profile document are not trusted. Grant a web admin the
-claim once with the app's `bootstrapAdmin` endpoint (needs `ADMIN_BOOTSTRAP_SECRET`):
+Rules and callables trust a custom claim, not an email list, an `admins` collection,
+or `role` on the user's profile document. `bootstrapAdmin` (this repo) sets
+`role: "admin"`:
 
 ```
 curl -X POST https://asia-southeast1-nutrade-a25c7.cloudfunctions.net/bootstrapAdmin \
@@ -112,26 +149,20 @@ curl -X POST https://asia-southeast1-nutrade-a25c7.cloudfunctions.net/bootstrapA
   -d '{"email":"<admin email>"}'
 ```
 
-The admin then signs out and back in so their token carries the claim.
+The admin signs out and back in so the token carries the claim.
 
-## 6. Cloud Functions: don't reuse the app's names
+`approveListing` and `rejectListing` also accept the panel's older `admin: true`
+claim. `markPayoutPaid`, `declinePayout`, `resolveDispute` and `setUserVerification`
+do not — they require `role == "admin"`. Grant that claim. Do not keep a second
+admin flag.
 
-Functions share one namespace per project and region, so a function deployed with an
-app function's name replaces the app's. The panel's `paymongoWebhook` has already replaced
-the app's, and the panel's `index.js` also exports `approveListing`, `rejectListing` and
-`createQrPayment`.
+## 6. Collections the panel used to own
 
-- Give the panel's functions their own codebase (`"codebase": "web"` in its `firebase.json`),
-  so a deploy never offers to delete the app's.
-- Rename or remove anything that clashes. `sendAdminSecurityCode` is fine; the other four
-  duplicate app functions and should go.
-- The panel's `paymongoWebhook` skips signature verification when the
-  `paymongo-signature` header is missing, so anyone can post a fake "payment.paid". The app's
-  `onListingUpdated` trigger now checks such listings with PayMongo and reverts unpaid ones,
-  but the webhook should reject unsigned requests.
+`admin_security_codes`, `notifications`, `marketplace`, `products`, `items` and
+`posts` are not part of the app. The shared rules do not allow them, and the app
+never reads them. Drop those screens or point them at the collections in section 3.
 
-## 7. Existing data
-
-`admin_security_codes` and `notifications` documents already in `(default)` stay there, and
-once the app's rules are deployed clients can no longer read them. Copy any worth keeping
-into `web` with the Admin SDK or the console.
+- Second-factor codes → Firebase Auth plus the `role: "admin"` claim.
+- Notices to a student → the app's Cloud Functions (`onListingUpdated` and the fee
+  settlement path). There is no `notifications` collection.
+- Catalogue / marketplace → `listings`.
