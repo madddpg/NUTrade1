@@ -76,4 +76,11 @@ public partial class ProfileSetupViewModel : BaseViewModel
             IsBusy = false;
         }
     }
+
+    [RelayCommand]
+    private async Task SignOutAsync()
+    {
+        await _auth.SignOutAsync();
+        await _nav.ResetToRootAsync();
+    }
 }

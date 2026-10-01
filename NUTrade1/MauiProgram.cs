@@ -170,6 +170,7 @@ namespace NUTrade1
             services.AddSingleton<IDepositService, FunctionsDepositService>();
             services.AddSingleton<IWalletService, FirestoreWalletService>();
             services.AddSingleton<IPayoutModerationService, FunctionsPayoutModerationService>();
+            services.AddSingleton<IReceiptFile, ReceiptFile>();
         }
 
         private static void RegisterStubBackend(IServiceCollection services)
@@ -193,6 +194,7 @@ namespace NUTrade1
             services.AddSingleton<StubWalletService>();
             services.AddSingleton<IWalletService>(sp => sp.GetRequiredService<StubWalletService>());
             services.AddSingleton<IPayoutModerationService>(sp => sp.GetRequiredService<StubWalletService>());
+            services.AddSingleton<IReceiptFile, ReceiptFile>();
         }
 
         private static void RegisterViewModels(IServiceCollection services)
@@ -218,6 +220,7 @@ namespace NUTrade1
             services.AddTransient<PayoutsViewModel>();
             services.AddTransient<PhotoViewerViewModel>();
             services.AddTransient<ReviewListingViewModel>();
+            services.AddTransient<ReceiptViewModel>();
         }
 
         private static void RegisterPages(IServiceCollection services)
@@ -243,6 +246,7 @@ namespace NUTrade1
             services.AddTransient<PayoutsPage>();
             services.AddTransient<PhotoViewerPage>();
             services.AddTransient<ReviewListingPage>();
+            services.AddTransient<ReceiptPage>();
         }
     }
 }

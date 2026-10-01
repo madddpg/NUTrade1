@@ -142,6 +142,19 @@ public partial class BidDepositViewModel : BaseViewModel
     }
 
     [RelayCommand]
+    private Task OpenReceiptAsync()
+    {
+        if (Deposit is not { } deposit) return Task.CompletedTask;
+        return ReceiptViewModel.OpenAsync(_nav, Receipts.BidDeposit(
+            deposit.Id,
+            string.IsNullOrWhiteSpace(deposit.ListingTitle) ? "Listing" : deposit.ListingTitle,
+            deposit.DepositCentavos,
+            deposit.AmountCentavos,
+            deposit.ResolvedAt ?? deposit.CreatedAt ?? DateTimeOffset.UtcNow,
+            deposit.CreditAppliedCentavos));
+    }
+
+    [RelayCommand]
     private Task BackToListingAsync() => _nav.GoBackAsync();
 
     private void Announce()

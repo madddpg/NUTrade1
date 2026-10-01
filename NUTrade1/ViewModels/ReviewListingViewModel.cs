@@ -37,6 +37,7 @@ public partial class ReviewListingViewModel : BaseViewModel, IQueryAttributable
     [NotifyPropertyChangedFor(nameof(PackageDisplay))]
     [NotifyPropertyChangedFor(nameof(PaymentDisplay))]
     [NotifyPropertyChangedFor(nameof(IsFree))]
+    [NotifyPropertyChangedFor(nameof(PostText))]
     [NotifyPropertyChangedFor(nameof(ShowAuctionTerms))]
     [NotifyPropertyChangedFor(nameof(IsSwap))]
     [NotifyPropertyChangedFor(nameof(PriceCaption))]
@@ -58,7 +59,9 @@ public partial class ReviewListingViewModel : BaseViewModel, IQueryAttributable
 
     public string PackageDisplay => $"{Preview?.Package ?? ListingPackage.Free} – {Money.ToDisplay(FeeCentavos)}";
 
-    public string PaymentDisplay => IsFree ? "None — first post is free" : "PayMongo (QR Ph)";
+    public string PaymentDisplay => IsFree ? "None — first post is free" : "PayMongo (QR Ph), one-time";
+
+    public string PostText => IsFree ? "Post listing" : $"Pay {Money.ToDisplay(FeeCentavos)} and post";
 
     public void ApplyQueryAttributes(IDictionary<string, object> query)
     {

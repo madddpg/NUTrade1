@@ -182,9 +182,15 @@ public partial class ListingDetailViewModel : BaseViewModel
             {
                 _bidCreditCentavos = Math.Max(0, _bidCreditCentavos - deposit.CreditAppliedCentavos);
                 OnPropertyChanged(nameof(DepositHint));
-                InfoMessage = "Your bid is live. Bid credit covered the deposit.";
                 Listing = await _listings.GetListingAsync(ListingId);
                 RaiseListingDependentProps();
+                await ReceiptViewModel.OpenAsync(_nav, Receipts.BidDeposit(
+                    deposit.Id,
+                    Listing?.Title ?? "Listing",
+                    deposit.DepositCentavos,
+                    deposit.AmountCentavos,
+                    DateTimeOffset.UtcNow,
+                    deposit.CreditAppliedCentavos));
                 return;
             }
 

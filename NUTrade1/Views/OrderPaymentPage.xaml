@@ -48,6 +48,10 @@
                         <Label Text="{Binding Reference, StringFormat='Order {0}'}" Style="{StaticResource MetaText}" HorizontalOptions="Center" />
                         <Label Text="Scan with any QR Ph banking or e-wallet app. We'll confirm it here automatically."
                                Style="{StaticResource ScreenSubtitle}" HorizontalTextAlignment="Center" />
+                        <Label Text="You are not charged until this QR is paid. Leaving does not pay."
+                               Style="{StaticResource MetaText}" HorizontalTextAlignment="Center" />
+                        <Button Text="Leave without paying" Style="{StaticResource GhostButton}"
+                                Command="{Binding LeaveCommand}" />
                         <Button Text="Generate a new code" Style="{StaticResource GhostButton}"
                                 Command="{Binding GenerateCommand}" IsEnabled="{Binding IsNotBusy}" />
                         <Label Text="{Binding ExpiryText}" Style="{StaticResource MetaText}" HorizontalTextAlignment="Center" />
@@ -55,7 +59,9 @@
                 </Border>
 
 
-                <Button Text="Open chat with the seller" Style="{StaticResource GoldButton}" Command="{Binding OpenChatCommand}" />
+                <Button Text="View receipt" Style="{StaticResource GoldButton}" Command="{Binding OpenReceiptCommand}"
+                        IsVisible="{Binding IsPaid}" />
+                <Button Text="Open chat with the seller" Style="{StaticResource GhostButton}" Command="{Binding OpenChatCommand}" />
 
             </VerticalStackLayout>
         </ScrollView>

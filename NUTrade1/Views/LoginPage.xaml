@@ -61,7 +61,7 @@
                         </Label>
                         <Button Text="Sign in" Style="{StaticResource GoldButton}"
                                 Command="{Binding SignInCommand}" IsEnabled="{Binding IsNotBusy}" />
-                        <Button Text="New here? Create an account" Style="{StaticResource GhostButton}"
+                        <Button Text="Sign up" Style="{StaticResource GhostButton}"
                                 Command="{Binding CreateAccountCommand}" IsEnabled="{Binding IsNotBusy}" />
 
                         <Grid ColumnDefinitions="*,Auto,*" ColumnSpacing="10" IsVisible="{Binding IsGoogleSignInAvailable}">
@@ -75,7 +75,7 @@
                         <Button Text="Continue with Google" Style="{StaticResource GhostButton}"
                                 IsVisible="{Binding IsGoogleSignInAvailable}"
                                 Command="{Binding SignInWithGoogleCommand}" IsEnabled="{Binding IsNotBusy}" />
-                        <controls:LoadingDots IsRunning="{Binding IsBusy}" />
+                        <controls:BusyBones IsActive="{Binding IsBusy}" Caption="Signing in…" />
                         <HorizontalStackLayout Spacing="6" HorizontalOptions="Center">
                             <Path Style="{StaticResource IconVerified}" HeightRequest="13" WidthRequest="13"
                                   Fill="{StaticResource InkMuted}" />

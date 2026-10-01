@@ -211,6 +211,9 @@ public partial class RegisterViewModel : BaseViewModel
 
     /// <summary>One step back; from the first step, back to sign in.</summary>
     [RelayCommand]
+    private Task SignInAsync() => _nav.GoToAsync($"//{Routes.Login}");
+
+    [RelayCommand]
     private async Task BackAsync()
     {
         ErrorMessage = null;

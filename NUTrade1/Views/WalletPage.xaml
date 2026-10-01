@@ -87,12 +87,18 @@
                         <BindableLayout.ItemTemplate>
                             <DataTemplate x:DataType="core:LedgerEntry">
                                 <Border Style="{StaticResource Card}" Padding="14">
+                                    <Border.GestureRecognizers>
+                                        <TapGestureRecognizer
+                                            Command="{Binding Source={x:Reference Page}, Path=BindingContext.OpenReceiptCommand}"
+                                            CommandParameter="{Binding .}" />
+                                    </Border.GestureRecognizers>
                                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
                                         <VerticalStackLayout Grid.Column="0" Spacing="2">
                                             <Label Text="{Binding KindDisplay}" FontFamily="InterSemiBold" FontSize="14"
                                                    TextColor="{StaticResource Ink}" />
                                             <Label Text="{Binding Note}" Style="{StaticResource MetaText}"
                                                    IsVisible="{Binding Note, Converter={StaticResource HasValue}}" />
+                                            <Label Text="Receipt" Style="{StaticResource MetaText}" />
                                             <Label Text="{Binding CreatedAt, Converter={StaticResource TimeAgo}}"
                                                    Style="{StaticResource MetaText}" />
                                         </VerticalStackLayout>

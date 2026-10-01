@@ -97,11 +97,13 @@
                     </VerticalStackLayout>
                 </Border>
 
-                <Button Text="Post Listing" Style="{StaticResource GoldButton}" FontSize="15" Margin="0,8,0,0"
+                <Label Text="Posting fees are one-time. There is no subscription. You can leave the next screen without paying, and nothing is charged until the QR is scanned."
+                       Style="{StaticResource MetaText}" />
+                <Button Text="{Binding PostText}" Style="{StaticResource GoldButton}" FontSize="15" Margin="0,8,0,0"
                         Command="{Binding PostCommand}" IsEnabled="{Binding IsNotBusy}" />
-                <Button Text="Edit details" Style="{StaticResource GhostButton}"
+                <Button Text="Go back" Style="{StaticResource GhostButton}"
                         Command="{Binding EditCommand}" IsEnabled="{Binding IsNotBusy}" />
-                <controls:LoadingDots IsRunning="{Binding IsBusy}" Caption="Uploading photos…" />
+                <controls:BusyBones IsActive="{Binding IsBusy}" Caption="Uploading photos…" />
             </VerticalStackLayout>
         </ScrollView>
 

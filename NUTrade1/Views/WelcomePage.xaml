@@ -50,14 +50,14 @@
                     Padding="4" HeightRequest="54" Margin="0,48,0,0">
                 <Grid ColumnDefinitions="*,*">
                     <Border Grid.Column="0" BackgroundColor="{StaticResource WelcomeNavy}" StrokeThickness="0" StrokeShape="RoundRectangle 999">
-                        <Label Text="Sign Up" FontFamily="InterBold" FontSize="15" TextColor="{StaticResource White}"
+                        <Label Text="Sign up" FontFamily="InterBold" FontSize="15" TextColor="{StaticResource White}"
                                HorizontalOptions="Center" VerticalOptions="Center" />
                         <Border.GestureRecognizers>
                             <TapGestureRecognizer Command="{Binding SignUpCommand}" />
                         </Border.GestureRecognizers>
                     </Border>
                     <Grid Grid.Column="1" BackgroundColor="Transparent">
-                        <Label Text="Sign In" FontFamily="InterBold" FontSize="15" TextColor="{StaticResource WelcomeNavy}"
+                        <Label Text="Sign in" FontFamily="InterBold" FontSize="15" TextColor="{StaticResource WelcomeNavy}"
                                HorizontalOptions="Center" VerticalOptions="Center" />
                         <Grid.GestureRecognizers>
                             <TapGestureRecognizer Command="{Binding SignInCommand}" />

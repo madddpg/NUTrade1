@@ -54,7 +54,7 @@
 
                         <Button Text="I've paid — check now" Style="{StaticResource NavyButton}"
                                 Command="{Binding CheckCommand}" IsEnabled="{Binding IsNotBusy}" />
-                        <controls:LoadingDots IsRunning="{Binding IsBusy}" Caption="Checking with PayMongo…" />
+                        <controls:BusyBones IsActive="{Binding IsBusy}" Caption="Checking your payment…" />
                     </VerticalStackLayout>
                 </Border>
 
@@ -67,7 +67,9 @@
                                HorizontalTextAlignment="Center" TextColor="{StaticResource Ink}" />
                         <Label Text="{Binding StatusText}" Style="{StaticResource MetaText}"
                                HorizontalTextAlignment="Center" />
-                        <Button Text="Back to the listing" Style="{StaticResource GoldButton}"
+                        <Button Text="View receipt" Style="{StaticResource GoldButton}"
+                                Command="{Binding OpenReceiptCommand}" />
+                        <Button Text="Back to the listing" Style="{StaticResource GhostButton}"
                                 Command="{Binding BackToListingCommand}" />
                     </VerticalStackLayout>
                 </Border>
@@ -79,8 +81,10 @@
                               HorizontalOptions="Center" Fill="{StaticResource NuNavy}" />
                         <Label Text="{Binding StatusText}" FontFamily="InterSemiBold" FontSize="15"
                                HorizontalTextAlignment="Center" TextColor="{StaticResource Ink}" />
-                        <Label Text="It's in your wallet as credit — bid again, or cash it out from your profile."
+                        <Label Text="It's back as bid credit. It applies to your next deposit."
                                Style="{StaticResource MetaText}" HorizontalTextAlignment="Center" />
+                        <Button Text="View receipt" Style="{StaticResource GoldButton}"
+                                Command="{Binding OpenReceiptCommand}" />
                         <Button Text="Back to the listing" Style="{StaticResource GhostButton}"
                                 Command="{Binding BackToListingCommand}" />
                     </VerticalStackLayout>

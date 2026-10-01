@@ -51,8 +51,8 @@
                         Command="{Binding VerifyCommand, Source={x:Reference Self}}"
                         IsEnabled="{Binding IsNotBusy, Source={x:Reference Self}}" />
 
-                <controls:LoadingDots IsRunning="{Binding IsBusy, Source={x:Reference Self}}"
-                                      Caption="Checking your code…" />
+                <controls:BusyBones IsActive="{Binding IsBusy, Source={x:Reference Self}}"
+                                    Caption="Checking your code…" />
 
                 <Button Text="{Binding ResendText, Source={x:Reference Self}}" Style="{StaticResource GhostButton}"
                         Command="{Binding ResendCommand, Source={x:Reference Self}}"

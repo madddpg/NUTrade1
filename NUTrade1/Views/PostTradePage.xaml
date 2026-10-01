@@ -185,8 +185,10 @@
                         <VerticalStackLayout Spacing="8">
                             <Label Text="CHOOSE A PACKAGE" FontFamily="InterBold" FontSize="11" CharacterSpacing="0.8"
                                    TextColor="{StaticResource NuGold}" />
-                            <Label Text="You've used your free first post, so each new listing has a posting fee."
+                            <Label Text="You've used your free first post, so each new listing has a one-time posting fee."
                                    Style="{StaticResource MetaText}" IsVisible="{Binding ShowFreeUsedNote}" />
+                            <Label Text="Fees are one-time. There is no subscription, and you can leave before paying."
+                                   Style="{StaticResource MetaText}" />
 
                             <controls:PackageOption Title="Free" Subtitle="First listing" Price="₱ 0" Value="Free"
                                                     IsVisible="{Binding IsFreeAvailable}"
@@ -201,7 +203,7 @@
                         </VerticalStackLayout>
 
 
-                        <Button Text="Continue to review ›" Style="{StaticResource GoldButton}" FontSize="13.5"
+                        <Button Text="{Binding PublishText}" Style="{StaticResource GoldButton}" FontSize="13.5"
                                 Command="{Binding ContinueToReviewCommand}" Margin="0,4,0,0" />
                     </VerticalStackLayout>
                 </Border>

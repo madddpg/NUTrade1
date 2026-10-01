@@ -24,6 +24,10 @@
                            Style="{StaticResource CardTitle}" FontSize="13.5" />
                     <Label Text="{Binding CompletionStatusText}" Style="{StaticResource MetaText}" />
                 </VerticalStackLayout>
+                <Button Grid.Column="1" Text="Receipt" Style="{StaticResource GhostButton}"
+                        FontSize="12" Padding="14,0" HeightRequest="34" VerticalOptions="Center"
+                        IsVisible="{Binding ShowReceipt}"
+                        Command="{Binding OpenReceiptCommand}" />
                 <Button Grid.Column="1" Text="Mark completed" Style="{StaticResource NavyButton}"
                         FontSize="12" Padding="14,0" HeightRequest="34" VerticalOptions="Center"
                         IsVisible="{Binding CanMarkCompleted}"

@@ -205,6 +205,9 @@ public partial class ForgotPasswordViewModel : BaseViewModel
         }
     }
 
+    [RelayCommand]
+    private Task SignInAsync() => _nav.GoToAsync($"//{Routes.Login}");
+
     /// <summary>One step back; from the first step, back to sign in.</summary>
     [RelayCommand]
     private async Task BackAsync()

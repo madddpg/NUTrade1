@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<views:AppContentPage
+    x:Class="NUTrade1.Views.ReceiptPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:views="clr-namespace:NUTrade1.Views"
+    xmlns:controls="clr-namespace:NUTrade1.Controls"
+    xmlns:vm="clr-namespace:NUTrade1.ViewModels"
+    x:DataType="vm:ReceiptViewModel"
+    Shell.NavBarIsVisible="False"
+    Title="Receipt">
+
+    <Grid RowDefinitions="Auto,*">
+        <controls:DetailBar Grid.Row="0" HeaderTitle="Receipt" />
+
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="18,10,18,28" Spacing="16">
+                <Border Style="{StaticResource Card}" Padding="20">
+                    <VerticalStackLayout Spacing="6">
+                        <Label Text="RECEIPT" Style="{StaticResource Kicker}" />
+                        <Label Text="{Binding Receipt.Title}" FontFamily="InterBold" FontSize="22"
+                               TextColor="{StaticResource Ink}" />
+                        <Label Text="{Binding AmountDisplay}" FontFamily="InterBold" FontSize="32"
+                               TextColor="{StaticResource Ink}" />
+                        <Label Text="{Binding WhenDisplay}" Style="{StaticResource MetaText}" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <Border Style="{StaticResource Card}" Padding="16">
+                    <Label Text="{Binding Body}" FontFamily="InterRegular" FontSize="13"
+                           TextColor="{StaticResource Ink}" LineHeight="1.4" />
+                </Border>
+
+                <Button Text="Save receipt" Style="{StaticResource GoldButton}"
+                        Command="{Binding SaveCommand}" IsEnabled="{Binding IsNotBusy}" />
+                <Button Text="Share receipt" Style="{StaticResource GhostButton}"
+                        Command="{Binding ShareCommand}" IsEnabled="{Binding IsNotBusy}" />
+                <controls:BusyBones IsActive="{Binding IsBusy}" Caption="Preparing your receipt…" />
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <controls:ToastHost Grid.Row="0" Grid.RowSpan="2" />
+    </Grid>
+</views:AppContentPage>

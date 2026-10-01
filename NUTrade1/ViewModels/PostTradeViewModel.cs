@@ -64,12 +64,11 @@ public partial class PostTradeViewModel : BaseViewModel
     /// <summary>Reveals the "where exactly?" box.</summary>
     public bool IsMeetupOther => CampusZone == CampusZone.Other;
 
-    // Starts on Additional and only moves to Free once the check below confirms the
-    // student still has their free post — never the other way round.
+    // Starts on Free. It moves to a paid package only after we know the free post is used.
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(FeeDisplay))]
     [NotifyPropertyChangedFor(nameof(PublishText))]
-    private ListingPackage _selectedPackage = ListingPackage.Additional;
+    private ListingPackage _selectedPackage = ListingPackage.Free;
 
     /// <summary>The Free package is offered only until the student's first post has gone through.</summary>
     [ObservableProperty] private bool _isFreeAvailable;
@@ -87,7 +86,7 @@ public partial class PostTradeViewModel : BaseViewModel
 
     public long FeeCentavos => NUTradeConstants.FeeForPackage(SelectedPackage);
     public string FeeDisplay => Money.ToDisplay(FeeCentavos);
-    public string PublishText => FeeCentavos == 0 ? "Publish listing" : $"Continue to review · {FeeDisplay}";
+    public string PublishText => FeeCentavos == 0 ? "Review listing" : $"Review listing · pay {FeeDisplay}";
 
     public List<EnumOption<ItemCategory>> CategoryOptions { get; } =
     [

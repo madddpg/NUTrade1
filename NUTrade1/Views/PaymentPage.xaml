@@ -32,12 +32,17 @@
                         <Label Text="{Binding PackageName, StringFormat='{0} listing'}" Style="{StaticResource MetaText}"
                                HorizontalOptions="Center" />
 
+                        <Label Text="One-time fee. Not a subscription. Nothing is charged until this QR is paid."
+                               Style="{StaticResource MetaText}" HorizontalTextAlignment="Center" />
                         <Button Text="I've paid — check now" Style="{StaticResource NavyButton}"
                                 Command="{Binding CheckNowCommand}" IsVisible="{Binding HasQrImage}" />
+                        <Button Text="Cancel — don't pay" Style="{StaticResource GhostButton}"
+                                Command="{Binding CancelPaymentCommand}" />
                         <Label Text="{Binding PaymentCheckMessage}" Style="{StaticResource MetaText}" HorizontalTextAlignment="Center"
                                IsVisible="{Binding PaymentCheckMessage, Converter={StaticResource HasValue}}" />
                         <Button Text="Generate a new code" Style="{StaticResource GhostButton}"
                                 Command="{Binding GenerateCommand}" IsEnabled="{Binding IsNotBusy}" />
+                        <controls:BusyBones IsActive="{Binding IsBusy}" Caption="Checking your payment…" />
                     </VerticalStackLayout>
                 </Border>
 
@@ -79,7 +84,8 @@
 
 
                 <VerticalStackLayout Spacing="10" IsVisible="{Binding IsSubmitted}">
-                    <Button Text="Go to the feed" Style="{StaticResource GoldButton}" Command="{Binding DoneCommand}" />
+                    <Button Text="View receipt" Style="{StaticResource GoldButton}" Command="{Binding OpenReceiptCommand}" />
+                    <Button Text="Go to the feed" Style="{StaticResource GhostButton}" Command="{Binding DoneCommand}" />
                     <Button Text="View my listings" Style="{StaticResource GhostButton}" Command="{Binding ViewMyListingsCommand}" />
                 </VerticalStackLayout>
 

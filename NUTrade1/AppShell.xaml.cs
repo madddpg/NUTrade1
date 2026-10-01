@@ -39,6 +39,7 @@ public partial class AppShell : Shell
         Routing.RegisterRoute(Routes.BidDeposit, typeof(BidDepositPage));
         Routing.RegisterRoute(Routes.PhotoViewer, typeof(PhotoViewerPage));
         Routing.RegisterRoute(Routes.ReviewListing, typeof(ReviewListingPage));
+        Routing.RegisterRoute(Routes.Receipt, typeof(ReceiptPage));
         Routing.RegisterRoute(Routes.Register, typeof(RegisterPage));
         Routing.RegisterRoute(Routes.ForgotPassword, typeof(ForgotPasswordPage));
     }

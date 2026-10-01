@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView
+    x:Class="NUTrade1.Controls.BusyBones"
+    x:Name="Self"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:controls="clr-namespace:NUTrade1.Controls"
+    IsVisible="{Binding IsActive, Source={x:Reference Self}}">
+
+    <!-- Bones in the shape of a short status line, instead of a spinner. -->
+    <VerticalStackLayout Spacing="8" HorizontalOptions="Center" WidthRequest="240">
+        <Label Text="{Binding Caption, Source={x:Reference Self}}" Style="{StaticResource MetaText}"
+               HorizontalTextAlignment="Center"
+               IsVisible="{Binding HasCaption, Source={x:Reference Self}}" />
+        <controls:Skeleton IsActive="{Binding IsActive, Source={x:Reference Self}}">
+            <VerticalStackLayout Spacing="8">
+                <Border Style="{StaticResource Bone}" HeightRequest="12" HorizontalOptions="Fill" />
+                <Border Style="{StaticResource Bone}" HeightRequest="12" WidthRequest="150" HorizontalOptions="Center" />
+                <Border Style="{StaticResource BoneRound}" HeightRequest="36" HorizontalOptions="Fill" />
+            </VerticalStackLayout>
+        </controls:Skeleton>
+    </VerticalStackLayout>
+</ContentView>

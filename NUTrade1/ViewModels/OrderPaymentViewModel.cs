@@ -110,6 +110,18 @@ public partial class OrderPaymentViewModel : BaseViewModel
     }
 
     [RelayCommand]
+    private Task OpenReceiptAsync()
+    {
+        if (Order is not { IsSettled: true } order) return Task.CompletedTask;
+        var reference = string.IsNullOrWhiteSpace(order.Reference) ? order.Id : order.Reference;
+        return ReceiptViewModel.OpenAsync(_nav, Receipts.OrderPayment(
+            reference, order.ListingTitle, order.AmountCentavos, DateTimeOffset.UtcNow));
+    }
+
+    [RelayCommand]
+    private Task LeaveAsync() => _nav.GoBackAsync();
+
+    [RelayCommand]
     private Task OpenChatAsync() =>
         Order is { ChatId.Length: > 0 } o
             ? _nav.GoToAsync(Routes.ChatRoom, new Dictionary<string, object> { ["chatId"] = o.ChatId })

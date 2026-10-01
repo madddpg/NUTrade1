@@ -14,6 +14,15 @@
     <ScrollView>
         <VerticalStackLayout Padding="24,28" Spacing="18">
 
+            <HorizontalStackLayout Spacing="6" HorizontalOptions="Start">
+                <HorizontalStackLayout.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding SignOutCommand}" />
+                </HorizontalStackLayout.GestureRecognizers>
+                <Path Style="{StaticResource LineChevronLeft}" HeightRequest="18" WidthRequest="18"
+                      Stroke="{StaticResource InkMuted}" VerticalOptions="Center" />
+                <Label Text="Sign out" FontFamily="InterRegular" FontSize="15" TextColor="{StaticResource InkMuted}" VerticalOptions="Center" />
+            </HorizontalStackLayout>
+
             <VerticalStackLayout Spacing="3">
                 <Label Text="One more step" Style="{StaticResource Kicker}" />
                 <Label Text="Set up your profile" Style="{StaticResource ScreenTitle}" />
@@ -48,9 +57,11 @@
                 </Border>
             </VerticalStackLayout>
 
-            <Button Text="Save and continue" Style="{StaticResource GoldButton}" Margin="0,6,0,0"
+            <Button Text="Save profile" Style="{StaticResource GoldButton}" Margin="0,6,0,0"
                     Command="{Binding SaveCommand}" IsEnabled="{Binding IsNotBusy}" />
-            <controls:LoadingDots IsRunning="{Binding IsBusy}" />
+            <Button Text="Sign out" Style="{StaticResource GhostButton}"
+                    Command="{Binding SignOutCommand}" IsEnabled="{Binding IsNotBusy}" />
+            <controls:BusyBones IsActive="{Binding IsBusy}" Caption="Saving your profile…" />
 
         </VerticalStackLayout>
     </ScrollView>

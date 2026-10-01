@@ -28,6 +28,7 @@ public partial class PaymentViewModel : BaseViewModel
     private CancellationTokenSource? _paymentChecks;
     private SecondClock? _expiryClock;
     private bool _postedNoticeShown;
+    private DateTimeOffset? _settledAt;
 
     /// <summary>How often the QR screen asks the backend to check with PayMongo.</summary>
     private static readonly TimeSpan PaymentCheckInterval = TimeSpan.FromSeconds(10);
@@ -259,6 +260,7 @@ public partial class PaymentViewModel : BaseViewModel
     {
         ErrorMessage = null;
         PaymentCheckMessage = null;
+        _settledAt ??= DateTimeOffset.UtcNow;
         if (CurrentStage == Stage.AwaitingPayment) CurrentStage = Stage.AwaitingApproval;
 
         if (_postedNoticeShown) return;
@@ -269,6 +271,16 @@ public partial class PaymentViewModel : BaseViewModel
             "View Listings",
             () => _nav.GoToAsync(Routes.ProfileTab)));
     }
+
+    [RelayCommand]
+    private Task CancelPaymentAsync() => _nav.GoBackAsync();
+
+    [RelayCommand]
+    private Task OpenReceiptAsync() => ReceiptViewModel.OpenAsync(_nav, Receipts.ListingFee(
+        ListingId ?? "listing",
+        PackageName,
+        Qr?.AmountCentavos ?? NUTradeConstants.FeeForPackage(Package),
+        _settledAt ?? DateTimeOffset.UtcNow));
 
     [RelayCommand]
     private Task DoneAsync() => _nav.GoToAsync(Routes.FeedTab);

@@ -26,4 +26,5 @@ public static class Routes
     public const string BidDeposit = "biddeposit";
     public const string PhotoViewer = "photoviewer";
     public const string ReviewListing = "reviewlisting";
+    public const string Receipt = "receipt";
 }

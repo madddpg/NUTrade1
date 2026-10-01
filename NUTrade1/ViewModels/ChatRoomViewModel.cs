@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using NUTrade1.Core;
+using NUTrade1.Services;
 
 namespace NUTrade1.ViewModels;
 
@@ -9,12 +10,14 @@ public partial class ChatRoomViewModel : BaseViewModel
 {
     private readonly IChatService _chats;
     private readonly IAuthService _auth;
+    private readonly INavigationService _nav;
     private IDisposable? _messagesSubscription;
 
-    public ChatRoomViewModel(IChatService chats, IAuthService auth)
+    public ChatRoomViewModel(IChatService chats, IAuthService auth, INavigationService nav)
     {
         _chats = chats;
         _auth = auth;
+        _nav = nav;
         Title = "Chat";
     }
 
@@ -27,6 +30,7 @@ public partial class ChatRoomViewModel : BaseViewModel
     [NotifyPropertyChangedFor(nameof(CanMarkCompleted))]
     [NotifyPropertyChangedFor(nameof(CompletionStatusText))]
     [NotifyPropertyChangedFor(nameof(ShowCompletionBar))]
+    [NotifyPropertyChangedFor(nameof(ShowReceipt))]
     private Chat? _chat;
 
     public ObservableCollection<ChatMessage> Messages { get; } = new();
@@ -39,6 +43,8 @@ public partial class ChatRoomViewModel : BaseViewModel
 
     /// <summary>Hidden until the chat document has loaded, so the bar can't flash empty.</summary>
     public bool ShowCompletionBar => Chat is not null;
+
+    public bool ShowReceipt => Chat?.IsClosed == true;
 
     public bool CanMarkCompleted =>
         Chat is { IsClosed: false } chat && !chat.HasConfirmed(_auth.CurrentUid);
@@ -93,6 +99,17 @@ public partial class ChatRoomViewModel : BaseViewModel
 
         // No optimistic append: the observer re-reads within a couple of seconds and
         // replaces the list wholesale, so adding it here would only risk a duplicate.
+    }
+
+    [RelayCommand]
+    private Task OpenReceiptAsync()
+    {
+        if (Chat is not { } chat) return Task.CompletedTask;
+        return ReceiptViewModel.OpenAsync(_nav, Receipts.Handover(
+            chat.Id,
+            string.IsNullOrWhiteSpace(chat.ListingTitle) ? "Listing" : chat.ListingTitle,
+            chat.WinningBidCentavos,
+            DateTimeOffset.UtcNow));
     }
 
     [RelayCommand]

@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using NUTrade1.Core;
+using NUTrade1.Services;
 
 namespace NUTrade1.ViewModels;
 
@@ -11,11 +12,13 @@ namespace NUTrade1.ViewModels;
 public partial class WalletViewModel : BaseViewModel
 {
     private readonly IWalletService _wallet;
+    private readonly INavigationService _nav;
     private bool _loaded;
 
-    public WalletViewModel(IWalletService wallet)
+    public WalletViewModel(IWalletService wallet, INavigationService nav)
     {
         _wallet = wallet;
+        _nav = nav;
         Title = "Bid credit";
     }
 
@@ -30,6 +33,12 @@ public partial class WalletViewModel : BaseViewModel
     public string BalanceDisplay => Money.ToDisplay(BalanceCentavos);
 
     public override Task OnAppearingAsync() => LoadWalletAsync(showSkeleton: !_loaded);
+
+    [RelayCommand]
+    private Task OpenReceiptAsync(LedgerEntry? entry) =>
+        entry is null
+            ? Task.CompletedTask
+            : ReceiptViewModel.OpenAsync(_nav, Receipts.Ledger(entry));
 
     [RelayCommand]
     private Task LoadAsync()
