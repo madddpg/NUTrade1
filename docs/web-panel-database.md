@@ -86,18 +86,29 @@ accounts.
 `payments/{id}` is the QR attempt behind a fee (`uid`, `listingId`, `amount`,
 `package`, `status`). Admins can read it; students can read only their own.
 
-### Payouts and disputes
+### Bid credit and disputes
 
-`payoutRequests` with `status == "requested"` is the cash-out queue. Fields: `uid`,
-`amountCentavos`, `method` (`"gcash"` or `"maya"`), `accountName`, `accountNumber`,
-`createdAt`. The wallet was already debited when the student asked.
+There is no cash-out. Drop the payout screen. `payoutRequests` is historical. Any
+document still `status == "requested"` should be finished with `declinePayout` so the
+held amount returns as bid credit. Do not send new ones, and do not call `markPayoutPaid`.
 
-`wallets/{uid}` is `balanceCentavos` (spendable now, not "earned so far").
-`ledgerEntries` is the append-only explanation: `uid`, `kind` (`deposit_credit`,
-`refund_credit`, `payout`), `amountCentavos` (negative when money leaves), `createdAt`.
+`wallets/{uid}.balanceCentavos` is bid credit for the next deposit, not money the
+student can withdraw. `ledgerEntries` explains it: `uid`, `kind`, `amountCentavos`
+(negative when credit is spent), `note`, `createdAt`.
+
+| `kind` | Meaning |
+| --- | --- |
+| `refund_credit` | Bond returned to the bidder (outbid, lost, showed up, seller cancelled, dispute refunded) |
+| `bid_credit_spent` | Credit reserved for a deposit. Always negative |
+| `forfeit_credit` | No-show bond given to the seller |
+| `deposit_credit` | Old handover rows that credited the seller. No new ones |
+| `payout` | Old cash-out rows. No new ones |
 
 `disputes` with `status == "open"` is a no-show report. Fields: `listingTitle`,
 `sellerUid`, `buyerUid`, `depositCentavos`, `note`, `chatId`.
+
+`counters/revenue.forfeitCreditCentavos` is the sum of no-show bonds awarded to
+sellers. It is not fee revenue.
 
 ## 4. Change data only through these callables
 
@@ -108,7 +119,7 @@ argument names exactly.
 await httpsCallable(functions, "approveListing")({ listingId });
 await httpsCallable(functions, "rejectListing")({ listingId, reason });
 
-await httpsCallable(functions, "markPayoutPaid")({ payoutRequestId });
+// Only to clear a payout that was already requested before cash-out was removed.
 await httpsCallable(functions, "declinePayout")({ payoutRequestId, reason });
 
 await httpsCallable(functions, "resolveDispute")({ disputeId, resolution: "forfeit" });
@@ -125,11 +136,12 @@ notified by `onListingUpdated`; the panel does not write a notification document
 `rejectListing` is terminal. `reason` is shown to the seller, trimmed to 300
 characters. A paid fee is not refunded here.
 
-`markPayoutPaid` records that an admin sent the money by hand. `declinePayout` returns
-the held balance. Neither moves money through PayMongo.
+`declinePayout` returns an old cash-out request as bid credit. `requestPayout` now
+refuses, and `markPayoutPaid` should not be used for anything new.
 
-`resolveDispute` with `"forfeit"` keeps the buyer's deposit and adds a strike.
-`"refund"` returns it as in-app credit.
+`resolveDispute` with `"forfeit"` gives the buyer's deposit to the seller as bid
+credit and adds a strike on the buyer. `"refund"` returns it to the bidder as bid
+credit and adds no strike. Neither path pays the platform.
 
 `setUserVerification` revokes or restores the `verified` custom claim. It is not how a
 student becomes verified in the first place — `completeSignup` does that.
@@ -152,9 +164,8 @@ curl -X POST https://asia-southeast1-nutrade-a25c7.cloudfunctions.net/bootstrapA
 The admin signs out and back in so the token carries the claim.
 
 `approveListing` and `rejectListing` also accept the panel's older `admin: true`
-claim. `markPayoutPaid`, `declinePayout`, `resolveDispute` and `setUserVerification`
-do not — they require `role == "admin"`. Grant that claim. Do not keep a second
-admin flag.
+claim. `declinePayout`, `resolveDispute` and `setUserVerification` do not — they
+require `role == "admin"`. Grant that claim. Do not keep a second admin flag.
 
 ## 6. Collections the panel used to own
 

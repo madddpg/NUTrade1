@@ -43,7 +43,13 @@ public sealed class FunctionsDepositService : IDepositService
             AmountCentavos = ReadLong(payload, "amountCentavos"),
             DepositCentavos = ReadLong(payload, "depositCentavos"),
             DepositPercent = (int)ReadLong(payload, "depositPercent"),
-            Status = DepositStatus.AwaitingPayment,
+            CreditAppliedCentavos = ReadLong(payload, "creditAppliedCentavos"),
+            QrDueCentavos = ReadLong(payload, "qrDueCentavos"),
+            CoveredByCredit = ReadBool(payload, "coveredByCredit"),
+            Status = ReadString(payload, "status") == "locked_in_escrow"
+                ? DepositStatus.LockedInEscrow
+                : DepositStatus.AwaitingPayment,
+            CommittedBidId = ReadString(payload, "bidId"),
             QrImageUrl = ReadString(payload, "qrImageUrl"),
             QrImageBase64 = ReadString(payload, "qrImageBase64"),
             QrPayload = ReadString(payload, "qrPayload"),
@@ -93,6 +99,10 @@ public sealed class FunctionsDepositService : IDepositService
             AmountCentavos = Fs.Long(fields, "amountCentavos"),
             DepositCentavos = Fs.Long(fields, "depositCentavos"),
             DepositPercent = Fs.Int32(fields, "depositPercent"),
+            CreditAppliedCentavos = Fs.Long(fields, "creditAppliedCentavos"),
+            QrDueCentavos = Fs.Long(fields, "qrDueCentavos") > 0
+                ? Fs.Long(fields, "qrDueCentavos")
+                : Fs.Long(fields, "depositCentavos"),
             Status = WireCodec.ToDepositStatus(Fs.String(fields, "status")),
             QrImageUrl = Fs.String(fields, "qrImageUrl"),
             QrImageBase64 = Fs.String(fields, "qrImageBase64"),
@@ -111,6 +121,11 @@ public sealed class FunctionsDepositService : IDepositService
         && value.ValueKind == JsonValueKind.String
             ? value.GetString()
             : null;
+
+    private static bool ReadBool(JsonElement payload, string name) =>
+        payload.ValueKind == JsonValueKind.Object
+        && payload.TryGetProperty(name, out var value)
+        && value.ValueKind is JsonValueKind.True;
 
     private static long ReadLong(JsonElement payload, string name) =>
         payload.ValueKind == JsonValueKind.Object

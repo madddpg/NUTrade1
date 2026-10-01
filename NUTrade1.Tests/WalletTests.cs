@@ -37,7 +37,9 @@ public class WalletTests
     [Theory]
     [InlineData(LedgerKind.DepositCredit, "Deposit received")]
     [InlineData(LedgerKind.Forfeit, "Deposit forfeited")]
-    [InlineData(LedgerKind.RefundCredit, "Credit added")]
+    [InlineData(LedgerKind.ForfeitCredit, "No-show deposit")]
+    [InlineData(LedgerKind.RefundCredit, "Back as bid credit")]
+    [InlineData(LedgerKind.BidCreditSpent, "Used on a bid")]
     [InlineData(LedgerKind.Unknown, "Adjustment")]
     public void LedgerEntry_names_every_kind(LedgerKind kind, string expected)
     {

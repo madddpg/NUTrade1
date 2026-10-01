@@ -48,13 +48,14 @@ public class BidDepositTests
     // The reason is what turns "deposit returned" into something a student can act on,
     // and every reason the Functions can send has to have a phrasing here.
     [Theory]
-    [InlineData("outbid", "Outbid — deposit returned")]
-    [InlineData("auction_lost", "Auction lost — deposit returned")]
-    [InlineData("seller_cancelled", "Seller cancelled — deposit returned")]
-    [InlineData("withdrawn", "Bid withdrawn — deposit returned")]
-    [InlineData("no_show_dismissed", "Dispute resolved in your favour — deposit returned")]
-    [InlineData(null, "Deposit returned")]
-    [InlineData("something_new", "Deposit returned")]
+    [InlineData("outbid", "Outbid — back as bid credit")]
+    [InlineData("auction_lost", "Auction lost — back as bid credit")]
+    [InlineData("seller_cancelled", "Seller cancelled — back as bid credit")]
+    [InlineData("trade_completed", "You showed up — back as bid credit")]
+    [InlineData("withdrawn", "Bid withdrawn — back as bid credit")]
+    [InlineData("no_show_dismissed", "Dispute resolved in your favour — back as bid credit")]
+    [InlineData(null, "Back as bid credit")]
+    [InlineData("something_new", "Back as bid credit")]
     public void A_returned_deposit_explains_why(string? reason, string expected)
     {
         var deposit = new BidDeposit { Status = DepositStatus.RefundedToBuyer, RefundReason = reason };
@@ -67,7 +68,7 @@ public class BidDepositTests
     {
         var deposit = new BidDeposit { Status = DepositStatus.Forfeited };
 
-        Assert.Equal("Deposit forfeited — you didn't show up", deposit.StatusDisplay);
+        Assert.Equal("You didn't show — the seller received this as bid credit", deposit.StatusDisplay);
     }
 
     // The deposit and the bid are different numbers and the screen shows both; mixing

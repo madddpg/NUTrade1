@@ -2,9 +2,7 @@ import { onCall, HttpsError } from "firebase-functions/v2/https";
 import * as logger from "firebase-functions/logger";
 import { DocumentData, DocumentReference, FieldValue, Timestamp } from "firebase-admin/firestore";
 import { db } from "./admin";
-import { PayMongoClient } from "./paymongo";
-import { paymongoSecretKey } from "./createQrPayment";
-import { readDepositForBid, resolveDeposit, tryPayMongoRefund } from "./depositResolution";
+import { readDepositForBid, resolveDeposit } from "./depositResolution";
 import { BID_STATUS, DISPUTE_STATUS, LISTING_STATUS, REFUND_REASON, REGION } from "./constants";
 
 /**
@@ -55,17 +53,10 @@ function assertOpen(chat: DocumentData): void {
 /**
  * The seller pulls out after a deposit has been paid.
  *
- * The buyer gets nothing from the trade, so real money back is the fair outcome and a
- * PayMongo refund is attempted first. It fails for QR Ph paid through Maya, and for a
- * payment PayMongo will not reverse — in which case the wallet credit is the fallback, and
- * the student is told which happened.
- *
- * The refund call happens *outside* the transaction because it is a network round trip;
- * the transaction then records whichever way it went.
+ * The buyer gets nothing from the trade, so the bond comes back as bid credit. It is not
+ * sent back to GCash: that refund is slow, costs a fee, and fails outright for Maya.
  */
-export const cancelTrade = onCall(
-  { secrets: [paymongoSecretKey], region: REGION },
-  async (request) => {
+export const cancelTrade = onCall({ region: REGION }, async (request) => {
     const auth = request.auth;
     if (!auth) throw new HttpsError("unauthenticated", "Sign in required.");
 
@@ -76,7 +67,7 @@ export const cancelTrade = onCall(
 
     const chatRef = db.collection("chats").doc(chatId);
 
-    // Peek first, so the refund can be attempted before the transaction opens.
+    // Peek so a stranger is refused before the transaction opens.
     const peek = await chatRef.get();
     if (!peek.exists) throw new HttpsError("not-found", "Trade not found.");
     const peeked = peek.data()!;
@@ -84,28 +75,6 @@ export const cancelTrade = onCall(
       throw new HttpsError("permission-denied", "Only the seller can cancel a trade.");
     }
     assertOpen(peeked);
-
-    let refundedViaPayMongo = false;
-    const winningBidId = peeked.winningBidId as string | undefined;
-    if (winningBidId) {
-      const bidSnap = await db
-        .collection("listings")
-        .doc(peeked.listingId as string)
-        .collection("bids")
-        .doc(winningBidId)
-        .get();
-      const depositId = bidSnap.data()?.["depositIntentId"] as string | undefined;
-      if (depositId) {
-        const depositSnap = await db.collection("bidIntents").doc(depositId).get();
-        const deposit = depositSnap.data();
-        if (deposit && deposit.status === "locked_in_escrow") {
-          refundedViaPayMongo = await tryPayMongoRefund(
-            new PayMongoClient(paymongoSecretKey.value()),
-            deposit
-          );
-        }
-      }
-    }
 
     const outcome = await db.runTransaction(async (tx) => {
       const { chat, bidRef, deposit } = await readTrade(tx, chatRef);
@@ -119,10 +88,8 @@ export const cancelTrade = onCall(
       if (deposit) {
         resolveDeposit(tx, deposit.ref, deposit.data, "refunded_to_buyer", {
           reason: REFUND_REASON.sellerCancelled,
-          via: refundedViaPayMongo ? "paymongo_refund" : "wallet_credit",
-          note: refundedViaPayMongo
-            ? "Seller cancelled — refunded to your GCash"
-            : "Seller cancelled — deposit returned",
+          via: "wallet_credit",
+          note: "Seller cancelled — deposit back as bid credit",
         });
       }
       if (bidRef) tx.update(bidRef, { status: BID_STATUS.declined, declinedAt: now });
@@ -132,7 +99,7 @@ export const cancelTrade = onCall(
         senderUid: "system",
         text: reason
           ? `The seller cancelled this trade: ${reason}`
-          : "The seller cancelled this trade. Your deposit has been returned.",
+          : "The seller cancelled this trade. Your deposit is back as bid credit.",
         type: "system",
         sentAt: now,
       });
@@ -141,11 +108,11 @@ export const cancelTrade = onCall(
         cancelledAt: now,
       });
 
-      return { buyerUid: chat.buyerUid as string, refundedViaPayMongo };
+      return { buyerUid: chat.buyerUid as string };
     });
 
     logger.info("cancelTrade", { chatId, seller: auth.uid, ...outcome });
-    return { ok: true, refundedViaPayMongo };
+    return { ok: true, refundedVia: "wallet_credit" };
   }
 );
 
@@ -212,9 +179,9 @@ export const reportNoShow = onCall({ region: REGION }, async (request) => {
 /**
  * An admin settles a no-show dispute.
  *
- * `forfeit` is the only path in the whole system that keeps a student's deposit, so it
- * also records a strike — a pattern of them is what an admin acts on, not one bad day.
- * `refund` returns it as credit and leaves no mark.
+ * `forfeit` gives the bidder's deposit to the seller as bid credit and records a strike.
+ * A pattern of strikes is what an admin acts on, not one bad day.
+ * `refund` returns the deposit to the bidder as bid credit and leaves no mark.
  */
 export const resolveDispute = onCall({ region: REGION }, async (request) => {
   const auth = request.auth;

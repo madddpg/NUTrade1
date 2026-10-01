@@ -85,10 +85,13 @@ export const markTradeCompleted = onCall({ region: REGION }, async (request) => 
     const sellerUid = chat.sellerUid as string;
     const buyerUid = chat.buyerUid as string;
 
-    // The handshake is what releases the money: the buyer's commitment deposit becomes
-    // the seller's balance, and the rest of the price changed hands in person.
+    // The bond did its job. The buyer pays the full price in person, and the deposit
+    // comes back to them as bid credit. It is not part of the seller's payment.
     if (deposit) {
-      resolveDeposit(tx, deposit.ref, deposit.data, "credited_to_seller");
+      resolveDeposit(tx, deposit.ref, deposit.data, "refunded_to_buyer", {
+        reason: "trade_completed",
+        note: "You showed up — deposit back as bid credit",
+      });
     }
 
     tx.update(chatRef, { completedBy: [...completedBy], status: "archived", completedAt: now });
@@ -113,7 +116,7 @@ export const markTradeCompleted = onCall({ region: REGION }, async (request) => 
     }
     tx.set(chatRef.collection("messages").doc(), {
       senderUid: "system",
-      text: "Trade completed. Thanks for keeping it on campus!",
+      text: "Trade completed. The full price was paid in person, and the buyer's deposit is back as bid credit.",
       type: "system",
       sentAt: now,
     });

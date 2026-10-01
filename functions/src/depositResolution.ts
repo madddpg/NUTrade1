@@ -12,19 +12,16 @@ import { DEPOSIT_STATUS, REFUND_REASON } from "./constants";
  * of three places, each of them written together with its ledger row in a single
  * transaction:
  *
- *   handover confirmed -> the seller's wallet
- *   outbid / lost / seller cancelled -> back to the buyer
- *   winning bidder no-show -> the platform treasury, plus a strike
+ *   showed up, outbid, lost, or the seller cancelled -> back to the bidder as bid credit
+ *   winning bidder no-show -> the seller's bid credit, plus a strike on the bidder
  *
- * Forfeit is the only outcome that keeps the money, which is what makes the deposit a
- * commitment rather than a fee.
+ * Forfeit is the only outcome that takes the bond away from the bidder. It does not
+ * become platform revenue: the seller who was stood up receives it as bid credit.
  *
- * **Why returns are in-app credit.** QR Ph captures immediately, so there is no
+ * **Why returns are bid credit.** QR Ph captures immediately, so there is no
  * authorisation hold to release — the money really did leave the student's GCash. A
- * PayMongo refund takes days, costs a fee on every bid round, and is impossible outright
- * for QR Ph paid through Maya. Credit is instant, free and reliable, and a student who
- * wants real money cashes it out through the payout queue, which an admin settles by hand.
- * Only seller cancellation attempts a real refund, and it falls back to credit.
+ * PayMongo refund takes days, costs a fee, and is impossible outright for QR Ph paid
+ * through Maya. Credit is instant and pays the next deposit. It cannot be cashed out.
  */
 
 export type DepositOutcome = "credited_to_seller" | "refunded_to_buyer" | "forfeited";
@@ -98,20 +95,23 @@ export function resolveDeposit(
     return true;
   }
 
-  // Forfeited. No ledger row: the ledger records wallet movements, and this money never
-  // reached the buyer's wallet — it went from their GCash straight to the merchant
-  // account. The forfeit is recorded on the deposit, which is the buyer's own record of
-  // it, and in the treasury counter.
+  // Forfeited. The bidder loses the bond and the seller can spend it on a later bid.
   tx.update(intentRef, {
     status: DEPOSIT_STATUS.forfeited,
     resolvedAt: now,
     refundReason: options.reason ?? null,
   });
+  const sellerUid = deposit.sellerUid as string | undefined;
+  if (sellerUid) {
+    postToLedger(tx, sellerUid, amount, LEDGER_KIND.forfeitCredit, {
+      ...context,
+      note: options.note ?? "Bidder didn't show — their deposit is yours to bid with",
+    });
+  }
   tx.set(
     db.collection("counters").doc("revenue"),
     {
-      grossCentavos: FieldValue.increment(amount),
-      forfeitedDepositsCentavos: FieldValue.increment(amount),
+      forfeitCreditCentavos: FieldValue.increment(amount),
       updatedAt: now,
     },
     { merge: true }

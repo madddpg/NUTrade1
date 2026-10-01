@@ -14,7 +14,7 @@ public enum DepositStatus
     /// <summary>Paid and held against a live bid.</summary>
     LockedInEscrow,
 
-    /// <summary>The handover was confirmed; the deposit went to the seller.</summary>
+    /// <summary>Older handovers credited the seller. New handovers return the bond to the bidder.</summary>
     CreditedToSeller,
 
     /// <summary>Returned to the bidder — outbid, lost, declined, withdrawn or cancelled.</summary>
@@ -49,6 +49,15 @@ public sealed class BidDeposit
 
     public int DepositPercent { get; set; }
 
+    /// <summary>Bid credit already reserved against this deposit. Zero when the student had none.</summary>
+    public long CreditAppliedCentavos { get; set; }
+
+    /// <summary>What the QR is for. The full deposit when no credit was applied. Zero when credit covered it.</summary>
+    public long QrDueCentavos { get; set; }
+
+    /// <summary>The bid went live without a QR because bid credit covered the deposit.</summary>
+    public bool CoveredByCredit { get; set; }
+
     public DepositStatus Status { get; set; } = DepositStatus.Unknown;
 
     public string? QrImageUrl { get; set; }
@@ -67,6 +76,11 @@ public sealed class BidDeposit
 
     public string AmountDisplay => Money.ToDisplay(AmountCentavos);
     public string DepositDisplay => Money.ToDisplay(DepositCentavos);
+
+    /// <summary>The amount on the QR. Falls back to the full deposit for intents written before credit.</summary>
+    public string QrDueDisplay => Money.ToDisplay(QrDueCentavos > 0 ? QrDueCentavos : DepositCentavos);
+
+    public string CreditAppliedDisplay => Money.ToDisplay(CreditAppliedCentavos);
 
     /// <summary>True once the bid is actually live on the listing.</summary>
     public bool IsCommitted => Status == DepositStatus.LockedInEscrow;
@@ -88,18 +102,19 @@ public sealed class BidDeposit
         DepositStatus.LockedInEscrow => "Deposit held — your bid is live",
         DepositStatus.CreditedToSeller => "Released to the seller",
         DepositStatus.RefundedToBuyer => RefundDisplay,
-        DepositStatus.Forfeited => "Deposit forfeited — you didn't show up",
+        DepositStatus.Forfeited => "You didn't show — the seller received this as bid credit",
         DepositStatus.Expired => "The code expired before it was paid",
         _ => "Unknown",
     };
 
     private string RefundDisplay => RefundReason switch
     {
-        "outbid" => "Outbid — deposit returned",
-        "auction_lost" => "Auction lost — deposit returned",
-        "seller_cancelled" => "Seller cancelled — deposit returned",
-        "withdrawn" => "Bid withdrawn — deposit returned",
-        "no_show_dismissed" => "Dispute resolved in your favour — deposit returned",
-        _ => "Deposit returned",
+        "outbid" => "Outbid — back as bid credit",
+        "auction_lost" => "Auction lost — back as bid credit",
+        "seller_cancelled" => "Seller cancelled — back as bid credit",
+        "trade_completed" => "You showed up — back as bid credit",
+        "withdrawn" => "Bid withdrawn — back as bid credit",
+        "no_show_dismissed" => "Dispute resolved in your favour — back as bid credit",
+        _ => "Back as bid credit",
     };
 }

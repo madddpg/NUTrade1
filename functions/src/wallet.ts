@@ -9,19 +9,22 @@ import { db } from "./admin";
  * reconstructible by summing the entries — which is the only reason to trust it, since a
  * balance nobody can audit is just a number.
  *
- * Nothing here is a callable. Balances change as a *consequence* of something else
- * settling — a handover confirmed, a deposit forfeited, a payout marked paid — so every
- * mutation takes the caller's transaction and rides along with whatever else that
- * transaction is writing. There is no "add money" endpoint by design.
+ * Nothing here is a callable. Balances change as a *consequence* of a bid: credit spent
+ * on a deposit, a bond returned, or a no-show bond given to the seller. Every mutation
+ * takes the caller's transaction. The balance pays the next deposit. It cannot be cashed out.
  */
 
 /** What a ledger entry is for. Stored as-is on the row, and shown to the student. */
 export const LEDGER_KIND = {
   /** A buyer's commitment deposit credited to the seller after a confirmed handover. */
   depositCredit: "deposit_credit",
-  /** A seller cancelled after a deposit was paid; the buyer gets in-app credit. */
+  /** The bond came back as bid credit: outbid, lost, showed up, or the seller cancelled. */
   refundCredit: "refund_credit",
-  /** Balance paid out to the student off-platform. Always negative. */
+  /** A no-show bond credited to the seller, spendable only on their next bid. */
+  forfeitCredit: "forfeit_credit",
+  /** Bid credit reserved against a deposit. Always negative. */
+  bidCreditSpent: "bid_credit_spent",
+  /** Balance paid out off-platform. Always negative. No longer offered to students. */
   payout: "payout",
 } as const;
 

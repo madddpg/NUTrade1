@@ -6,10 +6,8 @@ public sealed record PayoutDestination(PayoutMethod Method, string AccountName, 
 /// <summary>
 /// The student's internal balance and the record behind it.
 ///
-/// Balances are never moved from here — they change as a consequence of a trade settling
-/// or a deposit being forfeited, all server-side. The one thing a student can start is a
-/// payout, and that debits the balance immediately rather than when an admin pays it, so
-/// asking twice cannot be paid twice.
+/// The balance is bid credit. It changes only when a deposit is reserved, returned, or
+/// awarded after a no-show, all server-side. Students cannot cash it out.
 /// </summary>
 public interface IWalletService
 {

@@ -10,11 +10,11 @@
     x:DataType="vm:WalletViewModel"
     x:Name="Page"
     Shell.NavBarIsVisible="False"
-    Title="Wallet">
+    Title="Bid credit">
 
     <Grid RowDefinitions="Auto,*">
 
-        <controls:DetailBar Grid.Row="0" HeaderTitle="Wallet" />
+        <controls:DetailBar Grid.Row="0" HeaderTitle="Bid credit" />
 
         <RefreshView Grid.Row="1" Command="{Binding LoadCommand}" IsRefreshing="{Binding IsRefreshing}">
             <ScrollView>
@@ -71,80 +71,13 @@
                     <!-- Balance -->
                     <Border Style="{StaticResource Card}" Padding="20">
                         <VerticalStackLayout Spacing="4">
-                            <Label Text="AVAILABLE BALANCE" Style="{StaticResource Kicker}" />
+                            <Label Text="BID CREDIT" Style="{StaticResource Kicker}" />
                             <Label Text="{Binding BalanceDisplay}" FontFamily="InterBold" FontSize="34"
                                    TextColor="{StaticResource Ink}" />
-                            <Label Text="{Binding PayoutHint}" Style="{StaticResource MetaText}" Margin="0,4,0,0" />
-
-                            <Button Text="Cash out" Style="{StaticResource GoldButton}" Margin="0,12,0,0"
-                                    Command="{Binding OpenPayoutFormCommand}" IsEnabled="{Binding CanRequestPayout}"
-                                    IsVisible="{Binding IsFormOpen, Converter={StaticResource InvertBool}}" />
+                            <Label Text="Used automatically on your next bid deposit. It can't be cashed out or sent to GCash or Maya."
+                                   Style="{StaticResource MetaText}" Margin="0,4,0,0" />
                         </VerticalStackLayout>
                     </Border>
-
-                    <!-- Payout form -->
-                    <Border Style="{StaticResource Card}" Padding="18" IsVisible="{Binding IsFormOpen}">
-                        <VerticalStackLayout Spacing="13">
-                            <Label Text="Where should we send it?" FontFamily="InterBold" FontSize="15"
-                                   TextColor="{StaticResource Ink}" />
-                            <Label Text="The whole balance goes out in one payment." Style="{StaticResource MetaText}" />
-
-                            <HorizontalStackLayout Spacing="9">
-                                <controls:SelectableChip Text="GCash" Value="GCash"
-                                                         Command="{Binding SelectMethodCommand}"
-                                                         IsSelected="{Binding IsGCash}" />
-                                <controls:SelectableChip Text="Maya" Value="Maya"
-                                                         Command="{Binding SelectMethodCommand}"
-                                                         IsSelected="{Binding IsMaya}" />
-                            </HorizontalStackLayout>
-
-                            <VerticalStackLayout Spacing="5">
-                                <Label Text="Account name" Style="{StaticResource FieldLabel}" FontSize="14" />
-                                <Border Style="{StaticResource InputShell}">
-                                    <Entry Style="{StaticResource ShellEntry}" Text="{Binding AccountName}"
-                                           Placeholder="Name on the account" ReturnType="Next" />
-                                </Border>
-                            </VerticalStackLayout>
-
-                            <VerticalStackLayout Spacing="5">
-                                <Label Text="Mobile number" Style="{StaticResource FieldLabel}" FontSize="14" />
-                                <Border Style="{StaticResource InputShell}">
-                                    <Entry Style="{StaticResource ShellEntry}" Text="{Binding AccountNumber}"
-                                           Placeholder="09XXXXXXXXX" Keyboard="Telephone" MaxLength="13"
-                                           ReturnType="Go" ReturnCommand="{Binding SubmitPayoutCommand}" />
-                                </Border>
-                            </VerticalStackLayout>
-
-                            <Button Text="Request payout" Style="{StaticResource GoldButton}"
-                                    Command="{Binding SubmitPayoutCommand}" IsEnabled="{Binding IsNotBusy}" />
-                            <Button Text="Cancel" Style="{StaticResource GhostButton}"
-                                    Command="{Binding CancelPayoutCommand}" />
-                        </VerticalStackLayout>
-                    </Border>
-
-                    <!-- Payout requests -->
-                    <Label Text="Payouts" FontFamily="InterBold" FontSize="15" TextColor="{StaticResource Ink}"
-                           IsVisible="{Binding HasPayouts}" />
-                    <VerticalStackLayout Spacing="9" BindableLayout.ItemsSource="{Binding Payouts}"
-                                         IsVisible="{Binding HasPayouts}">
-                        <BindableLayout.ItemTemplate>
-                            <DataTemplate x:DataType="core:PayoutRequest">
-                                <Border Style="{StaticResource Card}" Padding="14">
-                                    <Grid ColumnDefinitions="*,Auto">
-                                        <VerticalStackLayout Grid.Column="0" Spacing="2">
-                                            <Label Text="{Binding AmountDisplay}" FontFamily="InterSemiBold" FontSize="15"
-                                                   TextColor="{StaticResource Ink}" />
-                                            <Label Text="{Binding StatusDisplay}" Style="{StaticResource MetaText}" />
-                                            <Label Text="{Binding DeclineReason}" Style="{StaticResource MetaText}"
-                                                   IsVisible="{Binding DeclineReason, Converter={StaticResource HasValue}}" />
-                                        </VerticalStackLayout>
-                                        <Label Grid.Column="1" Style="{StaticResource MetaText}" VerticalOptions="Center"
-                                               Text="{Binding CreatedAt, Converter={StaticResource TimeAgo}}" />
-                                    </Grid>
-                                </Border>
-                            </DataTemplate>
-                        </BindableLayout.ItemTemplate>
-                    </VerticalStackLayout>
 
                     <!-- Ledger -->
                     <Label Text="Activity" FontFamily="InterBold" FontSize="15" TextColor="{StaticResource Ink}"
@@ -172,7 +105,7 @@
                         </BindableLayout.ItemTemplate>
                     </VerticalStackLayout>
 
-                    <Label Text="Nothing here yet. Completed trades and refunds show up as they happen."
+                    <Label Text="Nothing here yet. Bid credit shows up when a deposit comes back, or when a no-show bond is awarded to you."
                            Style="{StaticResource MetaText}" HorizontalTextAlignment="Center" Margin="0,20,0,0"
                            IsVisible="{Binding HasLedger, Converter={StaticResource InvertBool}}" />
 

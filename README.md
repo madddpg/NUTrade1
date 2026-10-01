@@ -93,8 +93,36 @@ without one the collection grows a document per address forever.
 The MAUI app and the web admin panel are one system. They share the `nutrade-a25c7`
 project and **one** Firestore database, `(default)` — not a separate `web` database.
 The panel reads the app's collections (`listings`, `users`, `transactions`,
-`payoutRequests`, `disputes`, …) and changes them only by calling this repo's Cloud
-Functions (`approveListing`, `rejectListing`, `markPayoutPaid`, `resolveDispute`, …).
+`disputes`, …) and changes them only by calling this repo's Cloud Functions
+(`approveListing`, `rejectListing`, `resolveDispute`, …).
+
+### Bid credit (no cash-out)
+
+A bid deposit is a **bond against ghost bidding**, not part of the item price and not
+a balance the student can withdraw. There is no wallet cash-out and no GCash/Maya
+payout screen.
+
+| What happened | Where the 15% goes |
+| --- | --- |
+| Outbid, or the auction ends and they did not win | Back to the bidder as bid credit |
+| Both sides confirm the meetup | Back to the bidder as bid credit. They pay the **full** price in person |
+| Seller cancels | Back to the bidder as bid credit |
+| Admin resolves a no-show with `forfeit` | To the **seller** as bid credit, plus a strike on the bidder |
+| Admin resolves a no-show with `refund` | Back to the bidder as bid credit, no strike |
+
+Bid credit has one use: it pays the next deposit automatically.
+
+- `requestBid` returns `creditAppliedCentavos`, `qrDueCentavos`, and `coveredByCredit`.
+- When `coveredByCredit` is true the bid is already live (`status: "locked_in_escrow"`). Do not show a QR.
+- When `qrDueCentavos` is above zero, the QR is only for that remainder. `depositCentavos` is still the full 15%.
+- `requestPayout` now refuses. Do not offer cash-out.
+- If any `payoutRequests` are still `requested`, call `declinePayout` once so that balance comes back as bid credit. Do not call `markPayoutPaid` for new requests.
+- `resolveDispute` is unchanged as a call: `{ disputeId, resolution: "forfeit" | "refund" }`. `forfeit` no longer keeps the money as platform revenue. It credits `wallets/{sellerUid}` and writes a `ledgerEntries` row with `kind: "forfeit_credit"`.
+- A finished meetup writes `refunded_to_buyer` with `refundReason: "trade_completed"`. Older rows may still say `credited_to_seller`; leave those alone.
+- `wallets/{uid}.balanceCentavos` is bid credit. Ledger kinds: `refund_credit` (bond returned), `bid_credit_spent` (negative, used on a deposit), `forfeit_credit` (no-show bond to the seller). `payout` rows are historical.
+- `counters/revenue.forfeitCreditCentavos` counts bonds awarded to sellers. It is not listing-fee revenue. Do not add it to `grossCentavos`.
+
+Full field list: [`docs/web-panel-database.md`](docs/web-panel-database.md).
 
 Rules are deployed from this repo only. A `firebase deploy` from the web repo must not
 ship its own `firestore.rules`, and it must not redeploy `paymongoWebhook`,

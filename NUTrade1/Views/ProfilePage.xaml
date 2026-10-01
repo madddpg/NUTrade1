@@ -161,7 +161,7 @@
                     </Border>
                 </Grid>
 
-                <!-- Wallet: what the student has earned and can cash out -->
+                <!-- Bid credit: spent on the next deposit, never cashed out -->
                 <Border Style="{StaticResource Card}" Padding="14">
                     <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
                         <Border Grid.Column="0" HeightRequest="40" WidthRequest="40" StrokeThickness="0" VerticalOptions="Center"
@@ -170,34 +170,14 @@
                                   HorizontalOptions="Center" VerticalOptions="Center" Fill="{StaticResource NuGold}" />
                         </Border>
                         <VerticalStackLayout Grid.Column="1" Spacing="1" VerticalOptions="Center">
-                            <Label Text="Wallet" FontFamily="InterBold" FontSize="14" TextColor="{StaticResource Ink}" />
-                            <Label Text="{Binding WalletBalanceDisplay, StringFormat='{0} available'}" Style="{StaticResource MetaText}" />
+                            <Label Text="Bid credit" FontFamily="InterBold" FontSize="14" TextColor="{StaticResource Ink}" />
+                            <Label Text="{Binding WalletBalanceDisplay, StringFormat='{0} for your next deposit'}" Style="{StaticResource MetaText}" />
                         </VerticalStackLayout>
                         <Path Grid.Column="2" Style="{StaticResource IconChevronRight}" HeightRequest="20" WidthRequest="20"
                               VerticalOptions="Center" Fill="{StaticResource InkMuted}" />
                     </Grid>
                     <Border.GestureRecognizers>
                         <TapGestureRecognizer Command="{Binding OpenWalletCommand}" />
-                    </Border.GestureRecognizers>
-                </Border>
-
-                <!-- Admin only: the payout queue -->
-                <Border Style="{StaticResource Card}" Padding="14" IsVisible="{Binding IsAdmin}">
-                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
-                        <Border Grid.Column="0" HeightRequest="40" WidthRequest="40" StrokeThickness="0" VerticalOptions="Center"
-                                StrokeShape="RoundRectangle 999" Background="{StaticResource HeroBrush}">
-                            <Path Style="{StaticResource IconSwapH}" HeightRequest="18" WidthRequest="18"
-                                  HorizontalOptions="Center" VerticalOptions="Center" Fill="{StaticResource NuGold}" />
-                        </Border>
-                        <VerticalStackLayout Grid.Column="1" Spacing="1" VerticalOptions="Center">
-                            <Label Text="Payout requests" FontFamily="InterBold" FontSize="14" TextColor="{StaticResource Ink}" />
-                            <Label Text="{Binding PendingPayoutCount, StringFormat='{0} waiting to be paid'}" Style="{StaticResource MetaText}" />
-                        </VerticalStackLayout>
-                        <Path Grid.Column="2" Style="{StaticResource IconChevronRight}" HeightRequest="20" WidthRequest="20"
-                              VerticalOptions="Center" Fill="{StaticResource InkMuted}" />
-                    </Grid>
-                    <Border.GestureRecognizers>
-                        <TapGestureRecognizer Command="{Binding OpenPayoutsCommand}" />
                     </Border.GestureRecognizers>
                 </Border>
 

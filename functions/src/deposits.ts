@@ -1,12 +1,13 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import * as logger from "firebase-functions/logger";
-import { DocumentReference, Timestamp } from "firebase-admin/firestore";
+import { DocumentReference, Timestamp, Transaction } from "firebase-admin/firestore";
 import { db } from "./admin";
 import { PayMongoClient, mintQrPhPayment, paymentUnavailable } from "./paymongo";
 import { paymongoSecretKey } from "./createQrPayment";
 import { checkIntentWithPayMongo } from "./listingFees";
 import { resolveDeposit } from "./depositResolution";
+import { LEDGER_KIND, postToLedger, readBalance } from "./wallet";
 import {
   BID_DEPOSIT_PERCENT,
   BID_STATUS,
@@ -16,6 +17,7 @@ import {
   LISTING_STATUS,
   REFUND_REASON,
   REGION,
+  bidCreditSplit,
   depositFor,
   listingKind,
 } from "./constants";
@@ -27,16 +29,13 @@ import {
  * a QR Ph code; the bid itself is written only once the deposit is confirmed paid. Nothing
  * a client can say places a bid.
  *
- * The deposit is part-payment, not a fee. On a ₱500 winning bid with a ₱75 deposit the
- * buyer hands over ₱425 in person and the ₱75 we are holding is credited to the seller's
- * wallet when the handover is confirmed. The platform is a bridge, not the recipient.
+ * The deposit is a bond against ghost bidding, not part of the price. On a ₱500 winning
+ * bid the buyer still pays ₱500 in person. The ₱75 bond comes back as bid credit when
+ * they show up, lose, or are outbid. If they win and never show, that credit goes to
+ * the seller. Credit pays the next deposit automatically and cannot be cashed out.
  *
- * **Deposits are refundable** (decided 2026-09-24). Being outbid or losing the auction
- * returns the money; only the winning bidder who fails to turn up loses it. The return is
- * an **in-app credit**, not a PayMongo refund: QR Ph captures immediately so there is no
- * hold to release, a refund takes days and costs a fee on every bid round, and PayMongo
- * cannot refund QR Ph paid through Maya at all. A student who wants real money cashes the
- * credit out through the payout queue, which an admin settles by hand.
+ * **Returns are bid credit, not a PayMongo refund.** QR Ph captures immediately, a
+ * refund takes days and costs a fee, and PayMongo cannot refund QR Ph paid through Maya.
  *
  * `bidIntents/{id}` *is* the deposit record for its whole life — it is not thrown away
  * once the bid exists, because the deposit outlives the bid.
@@ -107,64 +106,217 @@ export const requestBid = onCall(
 
     const bidderSnap = await db.collection("users").doc(auth.uid).get();
     const bidder = bidderSnap.data() ?? {};
+    const bidderName = (bidder.displayName as string) ?? "NU student";
+
+    const intentRef = db.collection("bidIntents").doc();
+    const listingRef = db.collection("listings").doc(listingId);
+
+    const reserved = await db.runTransaction(async (tx) => {
+      const freshSnap = await tx.get(listingRef);
+      if (!freshSnap.exists) throw new HttpsError("not-found", "Listing not found.");
+      const fresh = freshSnap.data()!;
+      if (fresh.ownerUid === auth.uid) {
+        throw new HttpsError("failed-precondition", "You can't bid on your own listing.");
+      }
+      if (listingKind(fresh) !== LISTING_KIND.auction || fresh.status !== LISTING_STATUS.active) {
+        throw new HttpsError("failed-precondition", "This auction isn't accepting bids.");
+      }
+      const freshEnds = fresh.auctionEndsAt as Timestamp | undefined;
+      if (freshEnds && freshEnds.toMillis() <= now.toMillis()) {
+        throw new HttpsError("failed-precondition", "This auction has already ended.");
+      }
+      assertBidBeatsTheField(fresh, amountCentavos);
+
+      const balance = await readBalance(auth.uid, tx);
+      const { applied, qrDue } = bidCreditSplit(balance, depositCentavos);
+
+      const leaders = qrDue === 0
+        ? await tx.get(listingRef.collection("bids").where("status", "==", BID_STATUS.pending))
+        : null;
+      const leaderDeposits: Array<{ ref: DocumentReference; data: FirebaseFirestore.DocumentData }> = [];
+      if (leaders) {
+        for (const doc of leaders.docs) {
+          const depositId = doc.data()["depositIntentId"] as string | undefined;
+          if (!depositId) continue;
+          const ref = intentRefFor(depositId);
+          const snap = await tx.get(ref);
+          if (snap.exists) leaderDeposits.push({ ref, data: snap.data()! });
+        }
+      }
+
+      if (applied > 0) {
+        postToLedger(tx, auth.uid, -applied, LEDGER_KIND.bidCreditSpent, {
+          listingId,
+          note: qrDue === 0 ? "Bid credit covered the deposit" : "Bid credit applied to the deposit",
+        });
+      }
+
+      const intent = {
+        listingId,
+        listingTitle: fresh.title ?? "",
+        sellerUid: fresh.ownerUid,
+        bidderUid: auth.uid,
+        bidderName,
+        amountCentavos,
+        depositCentavos,
+        depositPercent: BID_DEPOSIT_PERCENT,
+        creditAppliedCentavos: applied,
+        qrDueCentavos: qrDue,
+        creditReleased: false,
+        paymongoIntentId: null,
+        qrImageUrl: null,
+        qrImageBase64: null,
+        qrPayload: null,
+        qrExpiresAt: null,
+        expiresAt: Timestamp.fromMillis(now.toMillis() + DEPOSIT_INTENT_EXPIRY_MINUTES * 60_000),
+        createdAt: now,
+        resolvedAt: null,
+        refundReason: null,
+        refundedVia: null,
+        committedBidId: null,
+      };
+
+      if (qrDue === 0) {
+        const bidId = writeLiveBid(tx, intentRef, intent, listingRef, fresh, leaders!, leaderDeposits, now, "credit");
+        return { applied, qrDue, committed: true, bidId };
+      }
+
+      tx.set(intentRef, { ...intent, status: DEPOSIT_STATUS.awaitingPayment, paidAt: null, settledBy: null });
+      return { applied, qrDue, committed: false, bidId: null as string | null };
+    });
+
+    if (reserved.committed) {
+      logger.info("requestBid: covered by bid credit", { bidIntentId: intentRef.id, listingId });
+      return {
+        bidIntentId: intentRef.id,
+        amountCentavos,
+        depositCentavos,
+        depositPercent: BID_DEPOSIT_PERCENT,
+        creditAppliedCentavos: reserved.applied,
+        qrDueCentavos: 0,
+        coveredByCredit: true,
+        status: HELD,
+        bidId: reserved.bidId,
+        qrImageUrl: null,
+        qrImageBase64: null,
+        qrPayload: null,
+        expiresAt: null,
+      };
+    }
 
     const client = new PayMongoClient(paymongoSecretKey.value());
     let minted;
     try {
       minted = await mintQrPhPayment(client, {
-        amountCentavos: depositCentavos,
+        amountCentavos: reserved.qrDue,
         description: `NUTrade bid deposit — ${listing.title} (₱${(amountCentavos / 100).toFixed(2)})`,
         billingName: (bidder.displayName as string) ?? "NUTrade student",
         billingEmail: (bidder.email as string) ?? auth.token.email ?? "",
       });
     } catch (err) {
-      // Nothing has been written yet, so there is nothing to unwind — the student simply
-      // gets told why, instead of a bare "INTERNAL".
+      await releaseReservedCredit(intentRef, "Couldn't start the QR — bid credit returned");
       throw paymentUnavailable(err);
     }
     const { intentId, qr } = minted;
-
-    const intentRef = db.collection("bidIntents").doc();
-    await intentRef.set({
-      listingId,
-      listingTitle: listing.title ?? "",
-      sellerUid: listing.ownerUid,
-      bidderUid: auth.uid,
-      bidderName: (bidder.displayName as string) ?? "NU student",
-      amountCentavos,
-      depositCentavos,
-      depositPercent: BID_DEPOSIT_PERCENT,
-      status: DEPOSIT_STATUS.awaitingPayment,
+    const qrExpiresAt = qrExpiresAtTimestamp(qr.expiresAt, now);
+    await intentRef.update({
       paymongoIntentId: intentId,
       qrImageUrl: qr.qrImageUrl ?? null,
       qrImageBase64: qr.qrImageBase64 ?? null,
       qrPayload: qr.qrPayload ?? null,
-      // The code's own life is PayMongo's (about 30 minutes, seen live). The intent
-      // stays open for DEPOSIT_INTENT_EXPIRY_MINUTES either way, so a code that dies
-      // first can still be replaced before the sweep gives up.
-      qrExpiresAt: qrExpiresAtTimestamp(qr.expiresAt, now),
-      expiresAt: Timestamp.fromMillis(now.toMillis() + DEPOSIT_INTENT_EXPIRY_MINUTES * 60_000),
-      createdAt: now,
-      resolvedAt: null,
-      refundReason: null,
-      refundedVia: null,
-      committedBidId: null,
+      qrExpiresAt,
     });
 
-    logger.info("requestBid: deposit QR issued", { bidIntentId: intentRef.id, listingId });
+    logger.info("requestBid: deposit QR issued", {
+      bidIntentId: intentRef.id,
+      listingId,
+      creditAppliedCentavos: reserved.applied,
+      qrDueCentavos: reserved.qrDue,
+    });
 
     return {
       bidIntentId: intentRef.id,
       amountCentavos,
       depositCentavos,
       depositPercent: BID_DEPOSIT_PERCENT,
+      creditAppliedCentavos: reserved.applied,
+      qrDueCentavos: reserved.qrDue,
+      coveredByCredit: false,
+      status: DEPOSIT_STATUS.awaitingPayment,
+      bidId: null,
       qrImageUrl: qr.qrImageUrl ?? null,
       qrImageBase64: qr.qrImageBase64 ?? null,
       qrPayload: qr.qrPayload ?? null,
-      expiresAt: qrExpiresAtTimestamp(qr.expiresAt, now).toMillis(),
+      expiresAt: qrExpiresAt.toMillis(),
     };
   }
 );
+
+/** Writes the live bid and returns the previous leader's bond. Reads must already be done. */
+function writeLiveBid(
+  tx: Transaction,
+  intentRef: DocumentReference,
+  intent: FirebaseFirestore.DocumentData,
+  listingRef: DocumentReference,
+  listing: FirebaseFirestore.DocumentData,
+  leaders: FirebaseFirestore.QuerySnapshot,
+  leaderDeposits: Array<{ ref: DocumentReference; data: FirebaseFirestore.DocumentData }>,
+  now: Timestamp,
+  source: string
+): string {
+  const amount = intent.amountCentavos as number;
+  const bidRef = listingRef.collection("bids").doc();
+  tx.set(bidRef, {
+    listingId: intent.listingId,
+    bidderUid: intent.bidderUid,
+    bidderName: intent.bidderName ?? "NU student",
+    amountCentavos: amount,
+    depositCentavos: intent.depositCentavos,
+    depositIntentId: intentRef.id,
+    status: BID_STATUS.pending,
+    createdAt: now,
+  });
+  tx.set(intentRef, {
+    ...intent,
+    status: HELD,
+    paidAt: now,
+    settledBy: source,
+    committedBidId: bidRef.id,
+  });
+  for (const doc of leaders.docs) {
+    tx.update(doc.ref, { status: BID_STATUS.outbid, outbidAt: now });
+  }
+  for (const { ref, data } of leaderDeposits) {
+    resolveDeposit(tx, ref, data, "refunded_to_buyer", { reason: REFUND_REASON.outbid });
+  }
+  tx.update(listingRef, {
+    currentHighestBidCentavos: amount,
+    highestBidderUid: intent.bidderUid,
+    bidCount: ((listing.bidCount as number) ?? 0) + 1,
+  });
+  return bidRef.id;
+}
+
+/** Gives back credit reserved for a QR that never became a bid. */
+async function releaseReservedCredit(intentRef: DocumentReference, note: string): Promise<void> {
+  await db.runTransaction(async (tx) => {
+    const snap = await tx.get(intentRef);
+    const intent = snap.data();
+    if (!intent || intent.status !== DEPOSIT_STATUS.awaitingPayment || intent.creditReleased === true) return;
+    const applied = (intent.creditAppliedCentavos as number) ?? 0;
+    tx.update(intentRef, {
+      status: DEPOSIT_STATUS.expired,
+      creditReleased: true,
+      resolvedAt: Timestamp.now(),
+    });
+    if (applied > 0) {
+      postToLedger(tx, intent.bidderUid as string, applied, LEDGER_KIND.refundCredit, {
+        listingId: (intent.listingId as string) ?? null,
+        note,
+      });
+    }
+  });
+}
 
 /** PayMongo's expiry when it sent one; otherwise the bid window, so the countdown is not a guess of 10 minutes. */
 function qrExpiresAtTimestamp(paymongoExpiresAt: string | undefined, now: Timestamp): Timestamp {
@@ -386,7 +538,7 @@ export const expireDepositIntents = onSchedule(
       // "unknown" means the lookup failed, not that it went unpaid — leave it for the
       // next sweep rather than expiring a deposit that may have landed.
       if (verdict === "unpaid") {
-        await doc.ref.update({ status: DEPOSIT_STATUS.expired, resolvedAt: now });
+        await releaseReservedCredit(doc.ref, "Deposit code expired — bid credit returned");
         expired++;
       }
     }

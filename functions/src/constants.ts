@@ -280,11 +280,11 @@ export const DEPOSIT_STATUS = {
   awaitingPayment: "awaiting_payment",
   /** Paid and held against this bid. The bid it was raised for is live. */
   lockedInEscrow: "locked_in_escrow",
-  /** Handover confirmed by both sides; the amount moved to the seller's wallet. */
+  /** Older handovers credited the seller. New handovers return the bond to the bidder. */
   creditedToSeller: "credited_to_seller",
-  /** Returned to the buyer — seller cancelled, or the bid was outbid or lost. */
+  /** Bond returned to the bidder as bid credit — outbid, lost, showed up, or seller cancelled. */
   refundedToBuyer: "refunded_to_buyer",
-  /** The winning bidder never turned up. The only path where the deposit is kept. */
+  /** The winning bidder never turned up. The bond becomes the seller's bid credit. */
   forfeited: "forfeited",
   /** The QR lapsed before payment, so the bid it was holding never went live. */
   expired: "expired",
@@ -297,7 +297,22 @@ export const REFUND_REASON = {
   sellerCancelled: "seller_cancelled",
   outbid: "outbid",
   auctionLost: "auction_lost",
+  /** Both sides confirmed the meetup. The buyer paid the full price in person. */
+  tradeCompleted: "trade_completed",
 } as const;
+
+/**
+ * How much of a deposit bid credit covers, and how much is still scanned.
+ * Mirrors BidCredit.Split in NUTrade1.Core/BidCredit.cs.
+ */
+export function bidCreditSplit(
+  balanceCentavos: number,
+  depositCentavos: number
+): { applied: number; qrDue: number } {
+  if (depositCentavos <= 0) return { applied: 0, qrDue: 0 };
+  const applied = balanceCentavos <= 0 ? 0 : Math.min(balanceCentavos, depositCentavos);
+  return { applied, qrDue: depositCentavos - applied };
+}
 
 /**
  * A bid intent whose deposit never arrives is swept after this long.

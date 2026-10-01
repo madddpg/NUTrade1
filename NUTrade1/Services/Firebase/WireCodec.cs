@@ -62,7 +62,9 @@ public static class WireCodec
     {
         "deposit_credit" => LedgerKind.DepositCredit,
         "forfeit" => LedgerKind.Forfeit,
+        "forfeit_credit" => LedgerKind.ForfeitCredit,
         "refund_credit" => LedgerKind.RefundCredit,
+        "bid_credit_spent" => LedgerKind.BidCreditSpent,
         "payout" => LedgerKind.Payout,
         _ => LedgerKind.Unknown,
     };

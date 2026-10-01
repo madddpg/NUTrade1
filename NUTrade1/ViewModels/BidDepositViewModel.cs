@@ -59,10 +59,12 @@ public partial class BidDepositViewModel : BaseViewModel
 
     public string StatusText => Deposit?.Status switch
     {
-        DepositStatus.LockedInEscrow => "Your bid is live. We'll hold the deposit until the auction ends.",
+        DepositStatus.LockedInEscrow => "Your bid is live. The deposit stays a promise until the auction ends.",
         DepositStatus.RefundedToBuyer => Deposit.StatusDisplay,
         DepositStatus.Expired => "The code expired before it was paid, so no bid was placed.",
-        _ => "Scan the code with GCash, Maya or any bank app. Your bid goes live the moment it clears.",
+        _ => Deposit?.CreditAppliedCentavos > 0
+            ? $"Scan {Deposit.QrDueDisplay} with GCash, Maya or any bank app. Your bid credit is already applied."
+            : "Scan the code with GCash, Maya or any bank app. Your bid goes live the moment it clears.",
     };
 
     /// <summary>
@@ -70,9 +72,18 @@ public partial class BidDepositViewModel : BaseViewModel
     /// one way to lose it.
     /// </summary>
     public string DepositExplainer => Deposit is { } d
-        ? $"{d.DepositDisplay} is {d.DepositPercent}% of your {d.AmountDisplay} bid. You get it back if you're " +
-          "outbid or don't win. If you win, it comes off the price — you only lose it by winning and not showing up."
+        ? CreditSentence(d) +
+          $"{d.DepositDisplay} is {d.DepositPercent}% of your {d.AmountDisplay} bid. " +
+          "You pay the full price in person if you win. This comes back as bid credit if you show up, lose, or are outbid. " +
+          "You lose it only by winning and not showing up — then the seller gets it."
         : string.Empty;
+
+    private static string CreditSentence(BidDeposit deposit) =>
+        deposit.CreditAppliedCentavos <= 0
+            ? string.Empty
+            : deposit.QrDueCentavos <= 0
+                ? $"{deposit.CreditAppliedDisplay} of your bid credit covered this deposit. "
+                : $"{deposit.CreditAppliedDisplay} of your bid credit is already applied. Scan {deposit.QrDueDisplay} for the rest. ";
 
     public string ExpiryText => Deposit?.QrExpiresAt is { } at
         ? $"Expires in {CountdownClock.Format(at - DateTimeOffset.UtcNow)}"

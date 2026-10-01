@@ -14,7 +14,9 @@ public partial class ListingDetailViewModel : BaseViewModel
     private readonly IDepositService _deposits;
     private readonly INavigationService _nav;
     private readonly IUserService _users;
+    private readonly IWalletService _wallet;
     private readonly IAuthService _auth;
+    private long _bidCreditCentavos;
     private IDispatcherTimer? _countdownTimer;
 
     public ListingDetailViewModel(
@@ -22,6 +24,7 @@ public partial class ListingDetailViewModel : BaseViewModel
         IBidService bids,
         IDepositService deposits,
         IUserService users,
+        IWalletService wallet,
         IAuthService auth,
         INavigationService nav)
     {
@@ -30,6 +33,7 @@ public partial class ListingDetailViewModel : BaseViewModel
         _deposits = deposits;
         _nav = nav;
         _users = users;
+        _wallet = wallet;
         _auth = auth;
         Title = "Listing";
     }
@@ -37,7 +41,9 @@ public partial class ListingDetailViewModel : BaseViewModel
     [ObservableProperty] private string? _listingId;
     [ObservableProperty] private Listing? _listing;
     [ObservableProperty] private UserProfile? _seller;
-    [ObservableProperty] private string _bidAmountText = string.Empty;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(DepositHint))]
+    private string _bidAmountText = string.Empty;
     [ObservableProperty] private bool _bidPlaced;
 
     public ObservableCollection<Bid> BidHistory { get; } = new();
@@ -80,6 +86,8 @@ public partial class ListingDetailViewModel : BaseViewModel
             Listing = await _listings.GetListingAsync(ListingId);
             Title = Listing?.Title ?? "Listing";
             Seller = Listing is null ? null : await _users.GetProfileAsync(Listing.OwnerUid);
+            _bidCreditCentavos = (await _wallet.GetWalletAsync()).BalanceCentavos;
+            OnPropertyChanged(nameof(DepositHint));
             RaiseListingDependentProps();
 
             var bids = await bidsTask;
@@ -106,9 +114,30 @@ public partial class ListingDetailViewModel : BaseViewModel
     /// What bidding actually costs, shown on the form. Mirrors BID_DEPOSIT_PERCENT — the
     /// exact peso amount depends on the bid, so this states the rule rather than a figure.
     /// </summary>
-    public string DepositHint =>
-        $"Bidding holds a {NUTradeConstants.BidDepositPercent}% deposit by QR Ph. " +
-        "You get it back if you're outbid or don't win.";
+    /// <summary>
+    /// The bond, and how much of the student's bid credit already covers it.
+    /// Credit is applied by the server; this only tells them before they tap.
+    /// </summary>
+    public string DepositHint
+    {
+        get
+        {
+            const string rule =
+                "It's a promise you'll show up, not a fee. You pay the full price in person. " +
+                "It comes back as bid credit if you show up, lose, or are outbid. " +
+                "If you win and don't show, the seller gets it.";
+
+            if (!long.TryParse(BidAmountText.Trim(), out var pesos) || pesos <= 0 || _bidCreditCentavos <= 0)
+                return rule;
+
+            var deposit = BidCredit.DepositFor(Money.FromPesos(pesos), NUTradeConstants.BidDepositPercent);
+            var (applied, qrDue) = BidCredit.Split(_bidCreditCentavos, deposit);
+            if (applied <= 0) return rule;
+            if (qrDue == 0)
+                return $"{Money.ToDisplay(applied)} of your bid credit covers this deposit, so there's no QR. {rule}";
+            return $"{Money.ToDisplay(applied)} of your bid credit is applied. You'll scan a QR for {Money.ToDisplay(qrDue)}. {rule}";
+        }
+    }
 
     [RelayCommand]
     private async Task PlaceBidAsync()
@@ -148,9 +177,20 @@ public partial class ListingDetailViewModel : BaseViewModel
             }
 
             BidAmountText = string.Empty;
+            var deposit = result.Value!;
+            if (deposit.CoveredByCredit)
+            {
+                _bidCreditCentavos = Math.Max(0, _bidCreditCentavos - deposit.CreditAppliedCentavos);
+                OnPropertyChanged(nameof(DepositHint));
+                InfoMessage = "Your bid is live. Bid credit covered the deposit.";
+                Listing = await _listings.GetListingAsync(ListingId);
+                RaiseListingDependentProps();
+                return;
+            }
+
             await _nav.GoToAsync(
                 Routes.BidDeposit,
-                new Dictionary<string, object> { ["bidIntentId"] = result.Value!.Id });
+                new Dictionary<string, object> { ["bidIntentId"] = deposit.Id });
         }
         finally
         {

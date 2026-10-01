@@ -8,13 +8,19 @@ public enum LedgerKind
     /// <summary>A buyer's commitment deposit credited after a confirmed handover.</summary>
     DepositCredit,
 
-    /// <summary>A deposit forfeited by a no-show buyer.</summary>
+    /// <summary>A deposit forfeited by a no-show buyer. Older rows only; new forfeits use <see cref="ForfeitCredit"/>.</summary>
     Forfeit,
 
-    /// <summary>In-app credit — a seller cancelled, or a payout was declined.</summary>
+    /// <summary>A no-show bond credited to the seller, spendable on their next bid.</summary>
+    ForfeitCredit,
+
+    /// <summary>In-app credit — outbid, lost, showed up, or the seller cancelled.</summary>
     RefundCredit,
 
-    /// <summary>Balance sent off-platform. Always negative.</summary>
+    /// <summary>Bid credit spent on a deposit. Always negative.</summary>
+    BidCreditSpent,
+
+    /// <summary>Balance sent off-platform. Always negative. No longer offered.</summary>
     Payout,
 }
 
@@ -34,8 +40,7 @@ public enum PayoutMethod
 }
 
 /// <summary>
-/// A student's spendable balance. "Spendable" is exact: raising a payout request debits
-/// it straight away, so this is never money that is already promised to somebody.
+/// Bid credit. It pays the next commitment deposit and cannot be cashed out.
 /// </summary>
 public sealed class Wallet
 {
@@ -72,7 +77,9 @@ public sealed class LedgerEntry
     {
         LedgerKind.DepositCredit => "Deposit received",
         LedgerKind.Forfeit => "Deposit forfeited",
-        LedgerKind.RefundCredit => "Credit added",
+        LedgerKind.ForfeitCredit => "No-show deposit",
+        LedgerKind.RefundCredit => "Back as bid credit",
+        LedgerKind.BidCreditSpent => "Used on a bid",
         LedgerKind.Payout => "Cashed out",
         _ => "Adjustment",
     };

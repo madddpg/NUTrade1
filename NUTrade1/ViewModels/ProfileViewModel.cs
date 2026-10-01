@@ -14,7 +14,6 @@ public partial class ProfileViewModel : BaseViewModel
     private readonly IBidService _bids;
     private readonly IListingModerationService _moderation;
     private readonly IWalletService _wallet;
-    private readonly IPayoutModerationService _payouts;
     private readonly INavigationService _nav;
     private readonly ILocalCache _cache;
     private DateTimeOffset? _profileSavedAt;
@@ -26,7 +25,6 @@ public partial class ProfileViewModel : BaseViewModel
         IBidService bids,
         IListingModerationService moderation,
         IWalletService wallet,
-        IPayoutModerationService payouts,
         INavigationService nav,
         ILocalCache cache)
     {
@@ -36,7 +34,6 @@ public partial class ProfileViewModel : BaseViewModel
         _bids = bids;
         _moderation = moderation;
         _wallet = wallet;
-        _payouts = payouts;
         _nav = nav;
         _cache = cache;
         Title = "Profile";
@@ -55,10 +52,7 @@ public partial class ProfileViewModel : BaseViewModel
     /// <summary>Listings waiting in the admin queue — only loaded for admins.</summary>
     [ObservableProperty] private int _pendingApprovalCount;
 
-    /// <summary>Payout requests waiting in the admin queue — only loaded for admins.</summary>
-    [ObservableProperty] private int _pendingPayoutCount;
-
-    /// <summary>The student's own spendable balance, shown on the wallet card.</summary>
+    /// <summary>Bid credit that will pay the next deposit. It cannot be cashed out.</summary>
     [ObservableProperty] private string _walletBalanceDisplay = "₱0.00";
 
     /// <summary>Confirmed-email badge. The Shell gate keeps unverified accounts out of
@@ -119,7 +113,6 @@ public partial class ProfileViewModel : BaseViewModel
         var listingsTask = _listings.GetMyListingsAsync();
         var walletTask = _wallet.GetWalletAsync();
         var pendingTask = IsAdmin ? _moderation.GetPendingListingsAsync() : null;
-        var payoutsTask = IsAdmin ? _payouts.GetPendingPayoutsAsync() : null;
 
         Profile = await profileTask;
         RatingText = Profile?.Rating is { } r ? r.ToString("0.0") : "New";
@@ -151,7 +144,6 @@ public partial class ProfileViewModel : BaseViewModel
         // and only the balance or a queue count is missing.
         WalletBalanceDisplay = (await walletTask).BalanceDisplay;
         if (pendingTask is not null) PendingApprovalCount = (await pendingTask).Count;
-        if (payoutsTask is not null) PendingPayoutCount = (await payoutsTask).Count;
     }
 
     private async Task TryPaintCachedProfileAsync()
@@ -225,9 +217,6 @@ public partial class ProfileViewModel : BaseViewModel
 
     [RelayCommand]
     private Task OpenWalletAsync() => _nav.GoToAsync(Routes.Wallet);
-
-    [RelayCommand]
-    private Task OpenPayoutsAsync() => _nav.GoToAsync(Routes.Payouts);
 
     /// <summary>
     /// Reopens the payment screen for a listing that never finished posting — a draft, or

@@ -9,9 +9,9 @@ namespace NUTrade1.Core;
 /// — and that polling is not belt-and-braces, it is the mechanism: PayMongo's webhook has
 /// never arrived in this project, so the app asking is what places the bid.
 ///
-/// The deposit is refundable. Being outbid, losing, having the bid declined, withdrawing,
-/// or the seller cancelling all return it as in-app credit. Only winning and then failing
-/// to turn up loses it.
+/// The deposit is a bond against ghost bidding. Being outbid, losing, showing up, or the
+/// seller cancelling returns it as bid credit. Winning and not showing up gives that
+/// credit to the seller. Credit pays the next deposit and cannot be cashed out.
 /// </summary>
 public interface IDepositService
 {
