@@ -71,7 +71,7 @@ would send the student out to a web page. Completing a reset signs every other d
 | `markTradeCompleted` | callable | Closes a trade once **both** sides confirm |
 | `onChatMessageCreated` | Firestore | Mirrors the latest message onto the parent chat |
 | `createQrPayment` | callable | Free first auction publishes instantly; otherwise mints a QR Ph code |
-| `paymongoWebhook` | HTTPS | HMAC-verified; publishes the listing when the fee clears |
+| `paymongoWebhook` | HTTPS | HMAC-verified. A failed scan does not cancel the fee; the QR is replaced, and only a confirmed payment settles it |
 | `expireStalePayments` | every 5 min | Reverts listings stranded behind a dead QR |
 | `sendEmailOtp` | callable | Mails a 6-digit code to the caller's own address (hashed + salted, 10 min, 60s resend cooldown) |
 | `verifyEmailOtp` | callable | Checks the code and grants the `verified` claim |

@@ -2,7 +2,8 @@ import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { defineSecret } from "firebase-functions/params";
 import { Timestamp } from "firebase-admin/firestore";
 import { db } from "./admin";
-import { PayMongoClient, extractQrFromNextAction, paymentUnavailable } from "./paymongo";
+import { PayMongoClient, extractQrFromNextAction, paymentUnavailable, paymongoTestMode } from "./paymongo";
+import { refreshQrOnDoc } from "./qrRefresh";
 import {
   feeForPackage,
   FREE_POST_USED_STATUSES,
@@ -129,6 +130,7 @@ export const createQrPayment = onCall(
       : Timestamp.fromMillis(paymongoExpiry);
 
     const paymentRef = db.collection("payments").doc();
+    const testMode = paymongoTestMode(paymongoSecretKey.value());
     await paymentRef.set({
       listingId,
       uid: auth.uid,
@@ -136,6 +138,10 @@ export const createQrPayment = onCall(
       amount: amountCentavos,
       paymongoIntentId: intent.data.id,
       status: "awaiting_payment",
+      qrImageUrl: qr.qrImageUrl ?? null,
+      qrImageBase64: qr.qrImageBase64 ?? null,
+      qrPayload: qr.qrPayload ?? null,
+      paymongoTestMode: testMode,
       qrExpiresAt: expiresAt,
       createdAt: now,
     });
@@ -152,6 +158,7 @@ export const createQrPayment = onCall(
       redirectUrl: qr.redirectUrl ?? null,
       amountCentavos,
       expiresAt: expiresAt.toMillis(),
+      testMode,
     };
   }
 );
@@ -183,10 +190,52 @@ export const checkListingPayment = onCall(
       throw new HttpsError("permission-denied", "This isn't your listing.");
     }
 
+    const client = new PayMongoClient(paymongoSecretKey.value());
+    const testMode = paymongoTestMode(paymongoSecretKey.value());
     if ([LISTING_STATUS.draft, LISTING_STATUS.pendingPayment].includes(listing.status)) {
-      await reconcileListingFees(new PayMongoClient(paymongoSecretKey.value()), listingId);
-      return { listingId, status: (await listingRef.get()).data()?.status ?? listing.status };
+      await reconcileListingFees(client, listingId);
     }
-    return { listingId, status: listing.status };
+
+    const listingStatus = (await listingRef.get()).data()?.status ?? listing.status;
+    if (![LISTING_STATUS.draft, LISTING_STATUS.pendingPayment].includes(listingStatus)) {
+      return { listingId, status: listingStatus, replaced: false, testMode: false };
+    }
+
+    // A failed scan leaves the intent open and that QR dead. Hand back a new
+    // code when PayMongo says the last attempt failed, including docs an older
+    // webhook already stamped `failed`.
+    const payments = await db.collection("payments").where("listingId", "==", listingId).get();
+    const open = payments.docs
+      .map((doc) => ({ ref: doc.ref, data: doc.data() }))
+      .filter((p) =>
+        ["awaiting_payment", "expired", "failed"].includes(p.data.status as string) && p.data.paymongoIntentId
+      )
+      .sort((a, b) => {
+        const aAt = (a.data.createdAt as { toMillis?: () => number } | undefined)?.toMillis?.() ?? 0;
+        const bAt = (b.data.createdAt as { toMillis?: () => number } | undefined)?.toMillis?.() ?? 0;
+        return bAt - aAt;
+      })[0];
+
+    if (!open) {
+      return { listingId, status: listingStatus, replaced: false, testMode };
+    }
+
+    const qr = await refreshQrOnDoc(
+      client,
+      open.ref,
+      open.data,
+      open.data.paymongoIntentId as string,
+      open.data.uid as string
+    );
+    return {
+      listingId,
+      status: listingStatus,
+      qrImageUrl: qr.qrImageUrl,
+      qrImageBase64: qr.qrImageBase64,
+      qrPayload: qr.qrPayload,
+      expiresAt: qr.expiresAt,
+      replaced: qr.replaced,
+      testMode: qr.testMode || testMode,
+    };
   }
 );

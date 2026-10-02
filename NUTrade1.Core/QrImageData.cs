@@ -14,14 +14,17 @@ public static class QrImageData
     private static readonly byte[] JpegSignature = [0xFF, 0xD8, 0xFF];
 
     /// <summary>
-    /// The decoded image when either field carries one inline — a data URI in
-    /// <paramref name="imageUrl"/>, or bare base64 in <paramref name="imageBase64"/>.
+    /// The decoded image when either field carries one inline — a data URI or raw
+    /// base64 in <paramref name="imageUrl"/>, or bare base64 in <paramref name="imageBase64"/>.
     /// Null when there is nothing inline, including when <paramref name="imageUrl"/> is a
     /// real web address; see <see cref="RemoteUri"/> for that case.
     /// </summary>
     public static byte[]? TryDecode(string? imageUrl, string? imageBase64)
     {
         if (TryDecodeDataUri(imageUrl) is { } fromUri) return fromUri;
+        // PayMongo documents image_url as a base64 string. That is sometimes a data
+        // URI and sometimes the PNG's raw base64, which is not a web address.
+        if (TryDecodeBase64(imageUrl) is { } fromUrl) return fromUrl;
         return TryDecodeBase64(imageBase64);
     }
 

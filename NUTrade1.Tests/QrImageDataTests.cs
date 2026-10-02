@@ -27,6 +27,12 @@ public class QrImageDataTests
     }
 
     [Fact]
+    public void Decodes_raw_base64_placed_in_image_url()
+    {
+        Assert.Equal(Png, QrImageData.TryDecode(PngBase64, null));
+    }
+
+    [Fact]
     public void Falls_back_to_the_bare_base64_field()
     {
         Assert.Equal(Png, QrImageData.TryDecode(null, PngBase64));

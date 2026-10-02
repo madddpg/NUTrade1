@@ -30,6 +30,6 @@ public sealed class StubPaymentService : IPaymentService
         Task.FromResult<Payment?>(null);
 
     /// <summary>Nothing to check offline: every stub post is settled for free on the spot.</summary>
-    public Task<OperationResult> CheckListingPaymentAsync(string listingId, CancellationToken ct = default) =>
-        Task.FromResult(OperationResult.Ok());
+    public Task<OperationResult<ListingPaymentCheck>> CheckListingPaymentAsync(string listingId, CancellationToken ct = default) =>
+        Task.FromResult(OperationResult<ListingPaymentCheck>.Ok(new ListingPaymentCheck()));
 }

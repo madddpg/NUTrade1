@@ -65,6 +65,12 @@ public sealed class BidDeposit
     public string? QrPayload { get; set; }
     public DateTimeOffset? QrExpiresAt { get; set; }
 
+    /// <summary>Set after a scan is rejected, once a new code is on this deposit.</summary>
+    public string? QrNote { get; set; }
+
+    /// <summary>The code was minted with a PayMongo test key. A real wallet will reject it.</summary>
+    public bool TestMode { get; set; }
+
     /// <summary>Set once the deposit is paid and the bid has been written.</summary>
     public string? CommittedBidId { get; set; }
 

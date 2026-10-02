@@ -84,7 +84,10 @@ accounts.
 `transactionCount`.
 
 `payments/{id}` is the QR attempt behind a fee (`uid`, `listingId`, `amount`,
-`package`, `status`). Admins can read it; students can read only their own.
+`package`, `status`). A wallet "payment failed" is one scan: `status` stays
+`awaiting_payment` and a new code is attached. A doc stuck at `failed` is from
+an older webhook and can still settle if PayMongo later reports the intent paid.
+Admins can read it; students can read only their own.
 
 ### Bid credit and disputes
 

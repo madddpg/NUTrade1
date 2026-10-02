@@ -36,13 +36,8 @@
 
                 <Border Style="{StaticResource Card}" Padding="18" IsVisible="{Binding IsOpen}">
                     <VerticalStackLayout Spacing="12" HorizontalOptions="Center">
-                        <Border StrokeThickness="1" Stroke="{StaticResource CardBorder}" StrokeShape="RoundRectangle 16"
-                                HeightRequest="220" WidthRequest="220" BackgroundColor="{StaticResource White}">
-                            <Grid>
-                                <Image Aspect="AspectFit" Source="{Binding QrImageSource}" IsVisible="{Binding HasQrImage}" />
-                                <controls:QrSkeleton IsActive="{Binding IsBusy}" BackgroundColor="{StaticResource White}" />
-                            </Grid>
-                        </Border>
+                        <controls:PaymentQrView ImageUrl="{Binding QrImageSource}" ImageBase64="{Binding QrImageBase64}"
+                                                FileName="nutrade-order" IsLoading="{Binding IsBusy}" />
                         <Label Text="{Binding AmountDisplay}" FontFamily="InterBold" FontSize="26"
                                TextColor="{StaticResource NuNavy}" HorizontalOptions="Center" />
                         <Label Text="{Binding Reference, StringFormat='Order {0}'}" Style="{StaticResource MetaText}" HorizontalOptions="Center" />
@@ -50,6 +45,12 @@
                                Style="{StaticResource ScreenSubtitle}" HorizontalTextAlignment="Center" />
                         <Label Text="You are not charged until this QR is paid. Leaving does not pay."
                                Style="{StaticResource MetaText}" HorizontalTextAlignment="Center" />
+                        <Label Text="If GCash or Maya says payment failed, that code is used up. Tap Generate a new code."
+                               Style="{StaticResource MetaText}" HorizontalTextAlignment="Center" />
+                        <Label Text="This code is from a test payment account. A real GCash or Maya app will say payment failed until live payments are turned on."
+                               Style="{StaticResource MetaText}" HorizontalTextAlignment="Center"
+                               TextColor="{StaticResource Danger}"
+                               IsVisible="{Binding IsTestMode}" />
                         <Button Text="Leave without paying" Style="{StaticResource GhostButton}"
                                 Command="{Binding LeaveCommand}" />
                         <Button Text="Generate a new code" Style="{StaticResource GhostButton}"

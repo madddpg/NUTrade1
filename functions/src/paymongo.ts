@@ -21,6 +21,20 @@ export class PayMongoError extends Error {
  * something retrying fixes, so it says so plainly rather than surfacing as a bare
  * "INTERNAL". PayMongo's own wording is never passed through: it talks about API keys.
  */
+/** True when the secret is PayMongo's test key. A real GCash or Maya app rejects those QR codes. */
+export function paymongoTestMode(secretKey: string): boolean {
+  return !secretKey.startsWith("sk_live_");
+}
+
+/**
+ * A replacement code was just issued, or we have already issued several. Stops a poll
+ * from minting a new QR on every tick while PayMongo is still catching up.
+ */
+export function replacementBlocked(replacedAtMillis: number | null, generation: number): boolean {
+  if (generation >= 5) return true;
+  return replacedAtMillis !== null && Date.now() - replacedAtMillis < 45_000;
+}
+
 export function paymentUnavailable(err: unknown): HttpsError {
   if (err instanceof PayMongoError && err.status === 401) {
     logger.error("PayMongo rejected our secret key — PAYMONGO_SECRET_KEY is wrong or unset");
@@ -28,6 +42,16 @@ export function paymentUnavailable(err: unknown): HttpsError {
       "failed-precondition",
       "Payments aren't set up yet. Let a NUTrade admin know — this isn't something you did."
     );
+  }
+  if (err instanceof PayMongoError && err.status === 400) {
+    logger.error("PayMongo rejected the payment request", { message: err.message });
+    if (/minimum/i.test(err.message)) {
+      const detail = err.message.replace(/\s+/g, " ").trim().slice(0, 180);
+      return new HttpsError(
+        "failed-precondition",
+        `The payment provider refused this amount: ${detail}`
+      );
+    }
   }
   return new HttpsError(
     "unavailable",
@@ -75,8 +99,20 @@ export class PayMongoClient {
     return json as T;
   }
 
-  /** Creates a Payment Intent for the given amount (centavos, PHP). */
+  /**
+   * Creates a Payment Intent for the given amount (centavos, PHP).
+   *
+   * QR Ph's create call is amount, currency, `payment_method_allowed: ["qrph"]`
+   * and a description. `payment_method_options` is a card setting (3-D Secure);
+   * a `qrph` block there is not part of this API, and a wallet can answer a scan
+   * of that code with "payment failed".
+   */
   async createPaymentIntent(amountCentavos: number, description: string) {
+    if (paymongoTestMode(this.secretKey)) {
+      logger.warn(
+        "PayMongo secret is not a live key. A real GCash or Maya app will reject this QR with payment failed."
+      );
+    }
     return this.request<PaymongoResource>("POST", "/payment_intents", {
       data: {
         attributes: {
@@ -84,7 +120,6 @@ export class PayMongoClient {
           currency: "PHP",
           capture_type: "automatic",
           payment_method_allowed: ["qrph"],
-          payment_method_options: { qrph: { auto_capture: true } },
           description,
         },
       },
@@ -200,6 +235,41 @@ export function intentIsPaid(intent: PaymongoResource): boolean {
   if (attrs["status"] === "succeeded") return true;
   const payments = (attrs["payments"] as Array<{ attributes?: { status?: string } }> | undefined) ?? [];
   return payments.some((p) => p.attributes?.status === "paid");
+}
+
+/**
+ * A failed scan does not kill the Payment Intent. PayMongo puts it back at
+ * `awaiting_payment_method` and that QR Ph code cannot be paid again — the next
+ * scan needs a new payment method on the same intent.
+ */
+export function intentNeedsFreshQr(intent: PaymongoResource): boolean {
+  if (intentIsPaid(intent)) return false;
+  const attrs = intent.data.attributes;
+  return attrs["status"] === "awaiting_payment_method" && attrs["last_payment_error"] != null;
+}
+
+/**
+ * Attaches a new QR Ph method when the previous attempt failed. No-op when the
+ * intent is already paid or still showing a live code.
+ */
+export async function issueReplacementQr(
+  client: PayMongoClient,
+  intentId: string,
+  billingName: string,
+  billingEmail: string
+): Promise<{ replaced: true; qr: ReturnType<typeof extractQrFromNextAction> } | { replaced: false }> {
+  const current = await client.retrievePaymentIntent(intentId);
+  if (!intentNeedsFreshQr(current)) return { replaced: false };
+
+  const clientKey = current.data.attributes["client_key"];
+  if (typeof clientKey !== "string" || clientKey.length === 0) {
+    logger.error("issueReplacementQr: intent has no client_key", { intentId });
+    return { replaced: false };
+  }
+
+  const method = await client.createQrPhPaymentMethod(billingName, billingEmail);
+  const attached = await client.attachPaymentMethod(intentId, method.data.id, clientKey);
+  return { replaced: true, qr: extractQrFromNextAction(attached) };
 }
 
 /**

@@ -51,6 +51,12 @@
                                HorizontalTextAlignment="Center" />
                         <Label Text="{Binding ExpiryText}" Style="{StaticResource MetaText}"
                                HorizontalTextAlignment="Center" />
+                        <Label Text="If GCash or Maya says payment failed, that code is used up. A new one replaces it here."
+                               Style="{StaticResource MetaText}" HorizontalTextAlignment="Center" />
+                        <Label Text="This code is from a test payment account. A real GCash or Maya app will say payment failed until live payments are turned on."
+                               Style="{StaticResource MetaText}" HorizontalTextAlignment="Center"
+                               TextColor="{StaticResource Danger}"
+                               IsVisible="{Binding IsTestMode}" />
 
                         <Button Text="I've paid — check now" Style="{StaticResource NavyButton}"
                                 Command="{Binding CheckCommand}" IsEnabled="{Binding IsNotBusy}" />

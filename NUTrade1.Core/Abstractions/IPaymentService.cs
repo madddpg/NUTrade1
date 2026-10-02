@@ -23,5 +23,5 @@ public interface IPaymentService
     /// and to settle it if so (<c>checkListingPayment</c>). Covers a late or missing
     /// webhook; the listing document reflects the outcome either way.
     /// </summary>
-    Task<OperationResult> CheckListingPaymentAsync(string listingId, CancellationToken ct = default);
+    Task<OperationResult<ListingPaymentCheck>> CheckListingPaymentAsync(string listingId, CancellationToken ct = default);
 }

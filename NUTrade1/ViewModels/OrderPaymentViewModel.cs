@@ -38,6 +38,8 @@ public partial class OrderPaymentViewModel : BaseViewModel
     [NotifyPropertyChangedFor(nameof(IsPaid))]
     [NotifyPropertyChangedFor(nameof(StatusText))]
     [NotifyPropertyChangedFor(nameof(ExpiryText))]
+    [NotifyPropertyChangedFor(nameof(IsTestMode))]
+    [NotifyPropertyChangedFor(nameof(QrImageBase64))]
     private Order? _order;
 
 
@@ -45,7 +47,11 @@ public partial class OrderPaymentViewModel : BaseViewModel
     public string AmountDisplay => Money.ToDisplay(Order?.AmountCentavos ?? 0);
     public string Reference => Order?.Reference ?? string.Empty;
     public string? QrImageSource => Order?.QrImageUrl;
-    public bool HasQrImage => !string.IsNullOrEmpty(Order?.QrImageUrl);
+    public string? QrImageBase64 => Order?.QrImageBase64;
+    public bool HasQrImage => !string.IsNullOrEmpty(Order?.QrImageUrl) || !string.IsNullOrEmpty(Order?.QrImageBase64);
+
+    /// <summary>A real GCash or Maya app will reject this code until live payments are on.</summary>
+    public bool IsTestMode => Order?.TestMode == true;
     public bool IsOpen => Order?.IsOpen ?? true;
     public bool IsPaid => Order?.IsSettled ?? false;
 

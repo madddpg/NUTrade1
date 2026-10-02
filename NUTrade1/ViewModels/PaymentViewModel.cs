@@ -50,6 +50,7 @@ public partial class PaymentViewModel : BaseViewModel
     [NotifyPropertyChangedFor(nameof(QrFileName))]
     [NotifyPropertyChangedFor(nameof(ExpiryText))]
     [NotifyPropertyChangedFor(nameof(ShowQr))]
+    [NotifyPropertyChangedFor(nameof(IsTestMode))]
     private QrPaymentResult? _qr;
 
     [ObservableProperty]
@@ -82,6 +83,9 @@ public partial class PaymentViewModel : BaseViewModel
     };
     public string AmountDisplay => Money.ToDisplay(Qr?.AmountCentavos ?? NUTradeConstants.FeeForPackage(Package));
     public bool HasQrImage => !string.IsNullOrEmpty(Qr?.QrImageUrl) || !string.IsNullOrEmpty(Qr?.QrImageBase64);
+
+    /// <summary>A real GCash or Maya app will reject this code until live payments are on.</summary>
+    public bool IsTestMode => Qr?.TestMode == true;
 
     /// <summary>What "Save QR" calls the picture, so it is easy to find in the gallery.</summary>
     public string QrFileName => $"nutrade-listing-fee-{DateTime.Now:yyyyMMdd-HHmm}";
@@ -162,8 +166,19 @@ public partial class PaymentViewModel : BaseViewModel
             while (CurrentStage == Stage.AwaitingPayment)
             {
                 await Task.Delay(PaymentCheckInterval, ct);
-                if (ShowQr && Qr is not null && !string.IsNullOrEmpty(ListingId))
-                    await _payments.CheckListingPaymentAsync(ListingId, ct);
+                if (!ShowQr || Qr is null || string.IsNullOrEmpty(ListingId)) continue;
+                try
+                {
+                    await ApplyServerCheckAsync(ListingId, ct);
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+                catch
+                {
+                    // A failed check is retried on the next tick.
+                }
             }
         }
         catch (OperationCanceledException)
@@ -181,15 +196,16 @@ public partial class PaymentViewModel : BaseViewModel
         PaymentCheckMessage = null;
         try
         {
-            var result = await _payments.CheckListingPaymentAsync(ListingId);
-            if (!result.Succeeded)
+            var check = await _payments.CheckListingPaymentAsync(ListingId);
+            if (!check.Succeeded)
             {
-                ErrorMessage = result.Error;
+                ErrorMessage = check.Error;
                 return;
             }
 
+            var replaced = check.Value is { } found && ApplyReplacement(found);
             Apply(await _listings.GetListingAsync(ListingId));
-            if (CurrentStage == Stage.AwaitingPayment)
+            if (CurrentStage == Stage.AwaitingPayment && !replaced)
                 PaymentCheckMessage = "PayMongo hasn't confirmed this payment yet. If you just paid, give it a minute — this screen keeps checking.";
         }
         finally
@@ -199,6 +215,53 @@ public partial class PaymentViewModel : BaseViewModel
     }
 
     private bool CanCheckNow() => !IsCheckingPayment;
+
+    /// <summary>
+    /// Asks PayMongo about the fee. A rejected scan comes back as a new code; the one
+    /// on screen is used up and paying it again only gets another failure from the bank.
+    /// </summary>
+    private async Task ApplyServerCheckAsync(string listingId, CancellationToken ct)
+    {
+        var result = await _payments.CheckListingPaymentAsync(listingId, ct);
+        if (result.Succeeded && result.Value is { } check)
+            ApplyReplacement(check);
+    }
+
+    /// <summary>True when the code on screen was swapped for a new one.</summary>
+    private bool ApplyReplacement(ListingPaymentCheck check)
+    {
+        if (Qr is null) return false;
+
+        var imageChanged = ImageDiffers(Qr, check);
+        var testChanged = check.TestMode && !Qr.TestMode;
+        if (!imageChanged && !testChanged) return false;
+
+        Qr = new QrPaymentResult
+        {
+            RequiresPayment = Qr.RequiresPayment,
+            PaymentId = Qr.PaymentId,
+            QrImageUrl = imageChanged ? check.QrImageUrl : Qr.QrImageUrl,
+            QrImageBase64 = imageChanged ? check.QrImageBase64 : Qr.QrImageBase64,
+            QrPayload = imageChanged ? (check.QrPayload ?? Qr.QrPayload) : Qr.QrPayload,
+            RedirectUrl = Qr.RedirectUrl,
+            AmountCentavos = Qr.AmountCentavos,
+            ExpiresAt = imageChanged ? (check.ExpiresAt ?? Qr.ExpiresAt) : Qr.ExpiresAt,
+            TestMode = Qr.TestMode || check.TestMode,
+        };
+
+        if (imageChanged)
+            PaymentCheckMessage = "The last scan didn't go through. A new code is on screen — pay this one.";
+        return imageChanged;
+    }
+
+    private static bool ImageDiffers(QrPaymentResult current, ListingPaymentCheck check)
+    {
+        var nextUrl = check.QrImageUrl;
+        var nextBase64 = check.QrImageBase64;
+        var urlChanged = !string.IsNullOrEmpty(nextUrl) && nextUrl != current.QrImageUrl;
+        var base64Changed = !string.IsNullOrEmpty(nextBase64) && nextBase64 != current.QrImageBase64;
+        return urlChanged || base64Changed;
+    }
 
     [RelayCommand]
     private async Task GenerateAsync()

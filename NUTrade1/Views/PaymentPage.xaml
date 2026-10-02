@@ -34,6 +34,12 @@
 
                         <Label Text="One-time fee. Not a subscription. Nothing is charged until this QR is paid."
                                Style="{StaticResource MetaText}" HorizontalTextAlignment="Center" />
+                        <Label Text="If GCash or Maya says payment failed, that code is used up. This screen replaces it."
+                               Style="{StaticResource MetaText}" HorizontalTextAlignment="Center" />
+                        <Label Text="This code is from a test payment account. A real GCash or Maya app will say payment failed until live payments are turned on."
+                               Style="{StaticResource MetaText}" HorizontalTextAlignment="Center"
+                               TextColor="{StaticResource Danger}"
+                               IsVisible="{Binding IsTestMode}" />
                         <Button Text="I've paid — check now" Style="{StaticResource NavyButton}"
                                 Command="{Binding CheckNowCommand}" IsVisible="{Binding HasQrImage}" />
                         <Button Text="Cancel — don't pay" Style="{StaticResource GhostButton}"

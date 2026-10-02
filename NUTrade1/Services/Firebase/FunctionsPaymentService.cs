@@ -64,14 +64,34 @@ public sealed class FunctionsPaymentService : IPaymentService
             ExpiresAt = payload.TryGetProperty("expiresAt", out var expires) && expires.TryGetInt64(out var ms)
                 ? DateTimeOffset.FromUnixTimeMilliseconds(ms)
                 : DateTimeOffset.UtcNow.AddMinutes(NUTradeConstants.QrExpiryMinutes),
+            TestMode = ReadBool(payload, "testMode"),
         });
     }
 
-    public async Task<OperationResult> CheckListingPaymentAsync(string listingId, CancellationToken ct = default)
+    public async Task<OperationResult<ListingPaymentCheck>> CheckListingPaymentAsync(string listingId, CancellationToken ct = default)
     {
         var result = await _functions.CallAsync("checkListingPayment", new { listingId }, ct);
-        return result.Succeeded ? OperationResult.Ok() : OperationResult.Fail(result.Error!);
+        if (!result.Succeeded) return OperationResult<ListingPaymentCheck>.Fail(result.Error!);
+
+        var payload = result.Value;
+        if (payload.ValueKind != JsonValueKind.Object)
+            return OperationResult<ListingPaymentCheck>.Ok(new ListingPaymentCheck());
+
+        return OperationResult<ListingPaymentCheck>.Ok(new ListingPaymentCheck
+        {
+            QrImageUrl = ReadString(payload, "qrImageUrl"),
+            QrImageBase64 = ReadString(payload, "qrImageBase64"),
+            QrPayload = ReadString(payload, "qrPayload"),
+            ExpiresAt = payload.TryGetProperty("expiresAt", out var expires) && expires.TryGetInt64(out var ms)
+                ? DateTimeOffset.FromUnixTimeMilliseconds(ms)
+                : null,
+            Replaced = ReadBool(payload, "replaced"),
+            TestMode = ReadBool(payload, "testMode"),
+        });
     }
+
+    private static bool ReadBool(JsonElement payload, string name) =>
+        payload.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.True;
 
     public async Task<Payment?> GetPaymentForListingAsync(string listingId, CancellationToken ct = default)
     {

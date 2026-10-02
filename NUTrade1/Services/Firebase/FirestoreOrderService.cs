@@ -82,7 +82,7 @@ public sealed class FirestoreOrderService : IOrderService
             read: ct => GetOrderAsync(orderId, ct),
             // Status and method are the only things the screen reacts to; the rest of
             // the order never changes after creation.
-            signature: o => o is null ? "none" : $"{o.Status}|{o.QrExpiresAt:O}",
+            signature: o => o is null ? "none" : $"{o.Status}|{o.QrExpiresAt:O}|{o.QrImageUrl?.Length}|{o.TestMode}",
             onChanged: onChanged,
             interval: FirebaseSettings.ObservePollInterval);
 
@@ -117,6 +117,7 @@ public sealed class FirestoreOrderService : IOrderService
             QrImageBase64 = Fs.String(fields, "qrImageBase64"),
             QrPayload = Fs.String(fields, "qrPayload"),
             QrExpiresAt = Fs.Timestamp(fields, "qrExpiresAt"),
+            TestMode = Fs.Bool(fields, "paymongoTestMode"),
             CreatedAt = Fs.Timestamp(fields, "createdAt") ?? DateTimeOffset.UtcNow,
         };
     }

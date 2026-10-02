@@ -3,7 +3,8 @@ import { onSchedule } from "firebase-functions/v2/scheduler";
 import * as logger from "firebase-functions/logger";
 import { DocumentReference, Timestamp, Transaction } from "firebase-admin/firestore";
 import { db } from "./admin";
-import { PayMongoClient, mintQrPhPayment, paymentUnavailable } from "./paymongo";
+import { PayMongoClient, mintQrPhPayment, paymentUnavailable, paymongoTestMode } from "./paymongo";
+import { refreshQrOnDoc } from "./qrRefresh";
 import { paymongoSecretKey } from "./createQrPayment";
 import { checkIntentWithPayMongo } from "./listingFees";
 import { resolveDeposit } from "./depositResolution";
@@ -219,12 +220,14 @@ export const requestBid = onCall(
     }
     const { intentId, qr } = minted;
     const qrExpiresAt = qrExpiresAtTimestamp(qr.expiresAt, now);
+    const testMode = paymongoTestMode(paymongoSecretKey.value());
     await intentRef.update({
       paymongoIntentId: intentId,
       qrImageUrl: qr.qrImageUrl ?? null,
       qrImageBase64: qr.qrImageBase64 ?? null,
       qrPayload: qr.qrPayload ?? null,
       qrExpiresAt,
+      paymongoTestMode: testMode,
     });
 
     logger.info("requestBid: deposit QR issued", {
@@ -248,6 +251,7 @@ export const requestBid = onCall(
       qrImageBase64: qr.qrImageBase64 ?? null,
       qrPayload: qr.qrPayload ?? null,
       expiresAt: qrExpiresAt.toMillis(),
+      testMode,
     };
   }
 );
@@ -484,10 +488,22 @@ export const checkBidDeposit = onCall(
       throw new HttpsError("permission-denied", "This isn't your bid.");
     }
 
-    if (intent.status === DEPOSIT_STATUS.awaitingPayment) {
+    if (intent.status === DEPOSIT_STATUS.awaitingPayment && intent.paymongoIntentId) {
       const client = new PayMongoClient(paymongoSecretKey.value());
-      if ((await checkIntentWithPayMongo(client, intent.paymongoIntentId as string)) === "paid") {
+      if (paymongoTestMode(paymongoSecretKey.value()) && intent.paymongoTestMode !== true) {
+        await intentRef.update({ paymongoTestMode: true });
+      }
+      const verdict = await checkIntentWithPayMongo(client, intent.paymongoIntentId as string);
+      if (verdict === "paid") {
         await commitDeposit(intentRef, "reconcile");
+      } else if (verdict === "unpaid") {
+        await refreshQrOnDoc(
+          client,
+          intentRef,
+          intent,
+          intent.paymongoIntentId as string,
+          intent.bidderUid as string
+        );
       }
     }
 

@@ -17,8 +17,12 @@ import { PayMongoClient, intentIsPaid } from "./paymongo";
  * key — nothing a student says can settle a fee.
  */
 
-/** Payment docs that may still turn out to have been paid. */
-const UNSETTLED_PAYMENT_STATUSES = ["awaiting_payment", "expired"];
+/**
+ * Payment docs that may still turn out to have been paid.
+ * `failed` is included because an older webhook stamped it on a single declined
+ * scan and then ignored the payment that followed.
+ */
+const UNSETTLED_PAYMENT_STATUSES = ["awaiting_payment", "expired", "failed"];
 
 /**
  * Marks one listing-fee payment paid, posts its listing into the admin queue, and

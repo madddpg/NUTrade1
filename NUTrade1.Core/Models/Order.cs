@@ -53,6 +53,9 @@ public sealed class Order
     /// </summary>
     public DateTimeOffset? QrExpiresAt { get; set; }
 
+    /// <summary>The code was minted with a PayMongo test key. A real wallet will reject it.</summary>
+    public bool TestMode { get; set; }
+
     public DateTimeOffset CreatedAt { get; set; }
 
     public bool IsSettled => Status == OrderStatus.Paid;

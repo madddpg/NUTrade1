@@ -30,4 +30,10 @@ public sealed class QrPaymentResult
     public long AmountCentavos { get; set; }
 
     public DateTimeOffset ExpiresAt { get; set; }
+
+    /// <summary>
+    /// The PayMongo secret in use is a test key. A real GCash or Maya app rejects the
+    /// code and says payment failed.
+    /// </summary>
+    public bool TestMode { get; set; }
 }

@@ -43,6 +43,7 @@ public partial class BidDepositViewModel : BaseViewModel
     [NotifyPropertyChangedFor(nameof(StatusText))]
     [NotifyPropertyChangedFor(nameof(DepositExplainer))]
     [NotifyPropertyChangedFor(nameof(ExpiryText))]
+    [NotifyPropertyChangedFor(nameof(IsTestMode))]
     private BidDeposit? _deposit;
 
     public string ItemTitle => Deposit?.ListingTitle ?? string.Empty;
@@ -52,6 +53,9 @@ public partial class BidDepositViewModel : BaseViewModel
     public string QrFileName => $"nutrade-bid-deposit-{DateTime.Now:yyyyMMdd-HHmm}";
 
     public bool IsAwaiting => Deposit?.IsAwaitingPayment ?? true;
+
+    /// <summary>A real GCash or Maya app will reject this code until live payments are on.</summary>
+    public bool IsTestMode => Deposit?.TestMode == true;
     public bool IsCommitted => Deposit?.IsCommitted ?? false;
 
     /// <summary>The money came straight back — usually a bid that went stale while unpaid.</summary>
@@ -62,7 +66,9 @@ public partial class BidDepositViewModel : BaseViewModel
         DepositStatus.LockedInEscrow => "Your bid is live. The deposit stays a promise until the auction ends.",
         DepositStatus.RefundedToBuyer => Deposit.StatusDisplay,
         DepositStatus.Expired => "The code expired before it was paid, so no bid was placed.",
-        _ => Deposit?.CreditAppliedCentavos > 0
+        _ => Deposit?.QrNote is { Length: > 0 } note
+            ? note
+            : Deposit?.CreditAppliedCentavos > 0
             ? $"Scan {Deposit.QrDueDisplay} with GCash, Maya or any bank app. Your bid credit is already applied."
             : "Scan the code with GCash, Maya or any bank app. Your bid goes live the moment it clears.",
     };

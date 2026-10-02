@@ -10,7 +10,8 @@ import {
   Transaction,
 } from "firebase-admin/firestore";
 import { db } from "./admin";
-import { PayMongoClient, mintQrPhPayment, paymentUnavailable } from "./paymongo";
+import { PayMongoClient, mintQrPhPayment, paymentUnavailable, paymongoTestMode } from "./paymongo";
+import { refreshQrOnDoc } from "./qrRefresh";
 import { paymongoSecretKey } from "./createQrPayment";
 import {
   ORDER_PAYMENT_WINDOW_HOURS,
@@ -124,15 +125,27 @@ export const createOrderQrPayment = onCall(
     const now = Timestamp.now();
 
     const existingExpiry = order.qrExpiresAt as Timestamp | null | undefined;
-    if (existingExpiry && existingExpiry.toMillis() > now.toMillis() + 30_000) {
+    if (existingExpiry && existingExpiry.toMillis() > now.toMillis() + 30_000 && order.paymongoIntentId) {
+      const client = new PayMongoClient(paymongoSecretKey.value());
+      if (paymongoTestMode(paymongoSecretKey.value()) && order.paymongoTestMode !== true) {
+        await ref.update({ paymongoTestMode: true });
+      }
+      const refreshed = await refreshQrOnDoc(
+        client,
+        ref,
+        order,
+        order.paymongoIntentId as string,
+        order.buyerUid as string
+      );
       return {
-        reused: true,
-        qrImageUrl: order.qrImageUrl ?? null,
-        qrImageBase64: order.qrImageBase64 ?? null,
-        qrPayload: order.qrPayload ?? null,
+        reused: !refreshed.replaced,
+        qrImageUrl: refreshed.replaced ? refreshed.qrImageUrl : (order.qrImageUrl ?? null),
+        qrImageBase64: refreshed.replaced ? refreshed.qrImageBase64 : (order.qrImageBase64 ?? null),
+        qrPayload: refreshed.replaced ? refreshed.qrPayload : (order.qrPayload ?? null),
         amountCentavos: order.amountCentavos,
-        expiresAt: existingExpiry.toMillis(),
+        expiresAt: refreshed.replaced && refreshed.expiresAt ? refreshed.expiresAt : existingExpiry.toMillis(),
         reference: order.reference,
+        testMode: order.paymongoTestMode === true || refreshed.testMode,
       };
     }
 
@@ -154,12 +167,14 @@ export const createOrderQrPayment = onCall(
     const { intentId, qr } = minted;
 
     const expiresAt = Timestamp.fromMillis(now.toMillis() + QR_EXPIRY_SECONDS * 1000);
+    const testMode = paymongoTestMode(paymongoSecretKey.value());
     await ref.update({
       paymongoIntentId: intentId,
       qrImageUrl: qr.qrImageUrl ?? null,
       qrImageBase64: qr.qrImageBase64 ?? null,
       qrPayload: qr.qrPayload ?? null,
       qrExpiresAt: expiresAt,
+      paymongoTestMode: testMode,
     });
 
     logger.info("createOrderQrPayment: code issued", { orderId: ref.id, intentId });

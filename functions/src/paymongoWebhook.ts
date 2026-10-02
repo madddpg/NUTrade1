@@ -2,13 +2,13 @@ import * as crypto from "crypto";
 import { onRequest } from "firebase-functions/v2/https";
 import { defineSecret } from "firebase-functions/params";
 import * as logger from "firebase-functions/logger";
-import { Timestamp } from "firebase-admin/firestore";
 import { db } from "./admin";
 import { paymongoSecretKey } from "./createQrPayment";
 import { checkIntentWithPayMongo, reconcilePayment } from "./listingFees";
 import { settleOrderPaid } from "./orders";
 import { commitDeposit } from "./deposits";
 import { PayMongoClient } from "./paymongo";
+import { refreshQrOnDoc } from "./qrRefresh";
 
 export const paymongoWebhookSecret = defineSecret("PAYMONGO_WEBHOOK_SECRET");
 
@@ -109,7 +109,18 @@ export const paymongoWebhook = onRequest(
         .get();
       if (!depositSnap.empty) {
         if (eventType !== "payment.paid") {
-          res.status(200).send("ignored");
+          // One failed scan uses up that QR. The intent stays open; a new code
+          // is what the next scan pays. The poll does this too — the webhook
+          // has often never arrived.
+          const deposit = depositSnap.docs[0];
+          await refreshQrOnDoc(
+            client,
+            deposit.ref,
+            deposit.data(),
+            paymentIntentId,
+            deposit.data().bidderUid as string | undefined
+          );
+          res.status(200).send("attempt failed; deposit still open");
           return;
         }
         if ((await checkIntentWithPayMongo(client, paymentIntentId)) !== "paid") {
@@ -137,7 +148,15 @@ export const paymongoWebhook = onRequest(
         return;
       }
       if (eventType !== "payment.paid") {
-        res.status(200).send("ignored");
+        const order = orderSnap.docs[0];
+        await refreshQrOnDoc(
+          client,
+          order.ref,
+          order.data(),
+          paymentIntentId,
+          order.data().buyerUid as string | undefined
+        );
+        res.status(200).send("attempt failed; order still open");
         return;
       }
       if ((await checkIntentWithPayMongo(client, paymentIntentId)) !== "paid") {
@@ -153,8 +172,7 @@ export const paymongoWebhook = onRequest(
     const paymentDoc = paymentsSnap.docs[0];
     const payment = paymentDoc.data();
 
-    if (payment.status === "paid" || payment.status === "failed") {
-      // Already processed — PayMongo retried the same event.
+    if (payment.status === "paid") {
       res.status(200).send("already processed");
       return;
     }
@@ -171,17 +189,17 @@ export const paymongoWebhook = onRequest(
       return;
     }
 
-    // payment.failed, and PayMongo agrees nothing was paid.
-    const listingRef = db.collection("listings").doc(payment.listingId as string);
-    await db.runTransaction(async (tx) => {
-      const listingSnap = await tx.get(listingRef);
-      tx.update(paymentDoc.ref, { status: "failed", failedAt: Timestamp.now() });
-      // Only revert if still awaiting this payment — don't clobber a listing
-      // that a retried, since-succeeded payment already published.
-      if (listingSnap.exists && listingSnap.data()!.status === "pending_payment") {
-        tx.update(listingRef, { status: "draft" });
-      }
-    });
-    res.status(200).send("ok");
+    // payment.failed is one attempt. PayMongo puts the intent back to
+    // awaiting_payment_method so a new QR can be attached. Marking the doc
+    // failed and reverting the listing made the next successful scan a no-op.
+    logger.info("paymongoWebhook: payment attempt failed; QR stays open", { paymentIntentId });
+    await refreshQrOnDoc(
+      client,
+      paymentDoc.ref,
+      payment,
+      paymentIntentId,
+      payment.uid as string | undefined
+    );
+    res.status(200).send("attempt failed; payment still open");
   }
 );

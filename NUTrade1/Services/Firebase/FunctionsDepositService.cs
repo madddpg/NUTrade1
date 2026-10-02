@@ -54,6 +54,7 @@ public sealed class FunctionsDepositService : IDepositService
             QrImageBase64 = ReadString(payload, "qrImageBase64"),
             QrPayload = ReadString(payload, "qrPayload"),
             QrExpiresAt = ReadEpochMillis(payload, "expiresAt"),
+            TestMode = ReadBool(payload, "testMode"),
             CreatedAt = DateTimeOffset.UtcNow,
         });
     }
@@ -108,6 +109,8 @@ public sealed class FunctionsDepositService : IDepositService
             QrImageBase64 = Fs.String(fields, "qrImageBase64"),
             QrPayload = Fs.String(fields, "qrPayload"),
             QrExpiresAt = Fs.Timestamp(fields, "qrExpiresAt"),
+            QrNote = Fs.String(fields, "qrNote"),
+            TestMode = Fs.Bool(fields, "paymongoTestMode"),
             CommittedBidId = Fs.String(fields, "committedBidId"),
             RefundReason = Fs.String(fields, "refundReason"),
             CreatedAt = Fs.Timestamp(fields, "createdAt"),
