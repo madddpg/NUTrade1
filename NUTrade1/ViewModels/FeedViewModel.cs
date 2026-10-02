@@ -11,6 +11,7 @@ public partial class FeedViewModel : BaseViewModel
     private readonly IListingService _listings;
     private readonly INavigationService _nav;
     private readonly ILocalCache _cache;
+    private readonly IAuthService _auth;
     private string? _cursor;
     private IDispatcherTimer? _countdownTimer;
 
@@ -28,19 +29,20 @@ public partial class FeedViewModel : BaseViewModel
     /// Home cost two full Firestore queries and showed an empty list in between. Regular
     /// listings only join the feed on the hour anyway (publishScheduledListings), so a
     /// minute of staleness hides nothing; pull-to-refresh and the filter button still
-    /// force a read. A cold start is different: the on-device copy is shown first and
-    /// skipped as a network read while it is younger than <see cref="LocalCachePolicy.MaxAge"/>.
+    /// force a read. A cold start shows the saved feed for this account, then asks
+    /// Firestore anyway, so an approval is not hidden for an hour.
     /// </summary>
     private static readonly TimeSpan FeedFreshFor = TimeSpan.FromSeconds(60);
 
     private DateTimeOffset _loadedAt;
     private DateTimeOffset? _cacheSavedAt;
 
-    public FeedViewModel(IListingService listings, INavigationService nav, ILocalCache cache)
+    public FeedViewModel(IListingService listings, INavigationService nav, ILocalCache cache, IAuthService auth)
     {
         _listings = listings;
         _nav = nav;
         _cache = cache;
+        _auth = auth;
         Title = "Home";
     }
 
@@ -70,11 +72,7 @@ public partial class FeedViewModel : BaseViewModel
         if (Listings.Count == 0)
         {
             var painted = await TryPaintCachedFeedAsync();
-            var fresh = painted && _cacheSavedAt is { } saved && LocalCachePolicy.IsFresh(saved, DateTimeOffset.UtcNow);
-            if (fresh)
-                _loadedAt = DateTimeOffset.UtcNow;
-            else
-                await LoadFeedAsync(showSkeleton: !painted);
+            await LoadFeedAsync(showSkeleton: !painted);
         }
         else if (DateTimeOffset.UtcNow - _loadedAt >= FeedFreshFor)
             await LoadFeedAsync(showSkeleton: false);
@@ -146,14 +144,16 @@ public partial class FeedViewModel : BaseViewModel
         FeedSnapshot? snapshot;
         try
         {
-            snapshot = await _cache.ReadFeedAsync(CategoryKey);
+            var uid = _auth.CurrentUid;
+            if (string.IsNullOrEmpty(uid)) return false;
+            snapshot = await _cache.ReadFeedAsync(uid, CategoryKey);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             return false;
         }
 
-        if (snapshot is not { Items.Count: > 0 }) return false;
+        if (snapshot is not { Items.Count: > 0 } || snapshot.OwnerUid != _auth.CurrentUid) return false;
 
         _cacheSavedAt = snapshot.SavedAt;
         _cursor = snapshot.NextCursor;
@@ -172,6 +172,7 @@ public partial class FeedViewModel : BaseViewModel
             await _cache.WriteFeedAsync(new FeedSnapshot
             {
                 SavedAt = savedAt,
+                OwnerUid = _auth.CurrentUid ?? string.Empty,
                 CategoryKey = CategoryKey,
                 NextCursor = page.NextCursor,
                 Items = page.Items.Select(CachedListing.From).ToList(),

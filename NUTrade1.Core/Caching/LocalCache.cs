@@ -20,6 +20,9 @@ public sealed class FeedSnapshot
 {
     public DateTimeOffset SavedAt { get; set; }
 
+    /// <summary>The account this page was saved for. A later sign-in must not be shown it.</summary>
+    public string OwnerUid { get; set; } = string.Empty;
+
     /// <summary>Empty for the unfiltered feed; otherwise the <see cref="ItemCategory"/> name.</summary>
     public string CategoryKey { get; set; } = string.Empty;
 
@@ -42,7 +45,7 @@ public sealed class ProfileSnapshot
 /// </summary>
 public interface ILocalCache
 {
-    Task<FeedSnapshot?> ReadFeedAsync(string categoryKey, CancellationToken ct = default);
+    Task<FeedSnapshot?> ReadFeedAsync(string uid, string categoryKey, CancellationToken ct = default);
 
     Task WriteFeedAsync(FeedSnapshot snapshot, CancellationToken ct = default);
 
@@ -67,11 +70,11 @@ public sealed class JsonFileCache : ILocalCache
 
     public JsonFileCache(string directory) => _directory = directory;
 
-    public Task<FeedSnapshot?> ReadFeedAsync(string categoryKey, CancellationToken ct = default) =>
-        ReadAsync<FeedSnapshot>(FeedPath(categoryKey), ct);
+    public Task<FeedSnapshot?> ReadFeedAsync(string uid, string categoryKey, CancellationToken ct = default) =>
+        ReadAsync<FeedSnapshot>(FeedPath(uid, categoryKey), ct);
 
     public Task WriteFeedAsync(FeedSnapshot snapshot, CancellationToken ct = default) =>
-        WriteAsync(FeedPath(snapshot.CategoryKey), snapshot, ct);
+        WriteAsync(FeedPath(snapshot.OwnerUid, snapshot.CategoryKey), snapshot, ct);
 
     public Task<ProfileSnapshot?> ReadProfileAsync(string uid, CancellationToken ct = default) =>
         ReadAsync<ProfileSnapshot>(ProfilePath(uid), ct);
@@ -79,8 +82,10 @@ public sealed class JsonFileCache : ILocalCache
     public Task WriteProfileAsync(ProfileSnapshot snapshot, CancellationToken ct = default) =>
         WriteAsync(ProfilePath(snapshot.Profile.Uid), snapshot, ct);
 
-    private string FeedPath(string categoryKey) =>
-        Path.Combine(_directory, $"feed-{(string.IsNullOrEmpty(categoryKey) ? "all" : categoryKey)}.json");
+    private string FeedPath(string uid, string categoryKey) =>
+        Path.Combine(
+            _directory,
+            $"feed-{Sanitize(uid)}-{(string.IsNullOrEmpty(categoryKey) ? "all" : Sanitize(categoryKey))}.json");
 
     private string ProfilePath(string uid) =>
         Path.Combine(_directory, $"profile-{Sanitize(uid)}.json");

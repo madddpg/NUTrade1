@@ -165,6 +165,7 @@ public class LocalCacheTests
         await cache.WriteFeedAsync(new FeedSnapshot
         {
             SavedAt = Now,
+            OwnerUid = "ada",
             CategoryKey = "Textbooks",
             NextCursor = "20",
             Items =
@@ -183,8 +184,9 @@ public class LocalCacheTests
             ],
         });
 
-        var feed = await cache.ReadFeedAsync("Textbooks");
+        var feed = await cache.ReadFeedAsync("ada", "Textbooks");
         Assert.NotNull(feed);
+        Assert.Equal("ada", feed.OwnerUid);
         Assert.Equal(Now, feed.SavedAt);
         Assert.Equal("20", feed.NextCursor);
         var listing = Assert.Single(feed.Items).ToListing();
@@ -204,6 +206,7 @@ public class LocalCacheTests
         Assert.Equal("Ada", profile.Profile.DisplayName);
         Assert.Equal("SACE", profile.Profile.Program);
 
-        Assert.Null(await cache.ReadFeedAsync(""));
+        Assert.Null(await cache.ReadFeedAsync("ada", ""));
+        Assert.Null(await cache.ReadFeedAsync("grace", "Textbooks"));
     }
 }
