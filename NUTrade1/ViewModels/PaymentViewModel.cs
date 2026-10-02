@@ -16,7 +16,7 @@ public partial class PaymentViewModel : BaseViewModel
         AwaitingPayment,
         /// <summary>Paid, or free — sitting in the admin queue.</summary>
         AwaitingApproval,
-        /// <summary>An admin approved it; it is live or queued for the next hourly refresh.</summary>
+        /// <summary>An admin approved it, so it is on the campus feed.</summary>
         Approved,
         Rejected,
     }
@@ -303,9 +303,7 @@ public partial class PaymentViewModel : BaseViewModel
                 // Approval can land between two polls, so the "posted" moment may never
                 // be observed on its own — still tell the seller it went through.
                 MarkPosted();
-                ApprovedText = listing.IsVisible || listing.VisibleFrom is null
-                    ? "Your listing is now live on the campus feed."
-                    : $"It joins the campus feed in {CountdownClock.Format(listing.VisibleFrom.Value - DateTimeOffset.UtcNow)}.";
+                ApprovedText = "Your listing is now live on the campus feed.";
                 CurrentStage = Stage.Approved;
                 break;
 

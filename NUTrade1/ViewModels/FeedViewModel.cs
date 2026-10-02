@@ -26,11 +26,10 @@ public partial class FeedViewModel : BaseViewModel
     /// <summary>
     /// How long a loaded feed is reused when the tab is reopened. OnAppearing fires on
     /// every Shell tab switch, so refetching there unconditionally meant Home → Profile →
-    /// Home cost two full Firestore queries and showed an empty list in between. Regular
-    /// listings only join the feed on the hour anyway (publishScheduledListings), so a
-    /// minute of staleness hides nothing; pull-to-refresh and the filter button still
-    /// force a read. A cold start shows the saved feed for this account, then asks
-    /// Firestore anyway, so an approval is not hidden for an hour.
+    /// Home cost two full Firestore queries and showed an empty list in between. A minute
+    /// of staleness is enough; pull-to-refresh and the filter button still force a read.
+    /// A cold start shows the saved feed for this account, then asks Firestore anyway, so
+    /// an approval is not stuck behind the saved copy.
     /// </summary>
     private static readonly TimeSpan FeedFreshFor = TimeSpan.FromSeconds(60);
 

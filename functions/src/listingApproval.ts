@@ -10,6 +10,7 @@ import {
   ListingPackage,
   REGION,
   listingKind,
+  normalizeListingPackage,
 } from "./constants";
 import { visibilityFor } from "./listingVisibility";
 
@@ -18,8 +19,9 @@ import { visibilityFor } from "./listingVisibility";
  * first post — no longer publishes an auction; it hands it to an admin, and only
  * approveListing puts it on the feed.
  *
- * The auction clock and the hourly-refresh slot both start at approval, not at
- * payment, so time spent waiting in the queue never eats into a seller's 24 hours.
+ * The auction clock starts at approval, not at payment, so time spent waiting in
+ * the queue never eats into a seller's 24 hours. Approval also puts the listing
+ * on the feed. Only a Priority package is pinned.
  */
 
 /** Hard cap on an admin's rejection note, which the seller sees verbatim. */
@@ -40,16 +42,18 @@ export function pendingApprovalFields(pkg: ListingPackage, now: Timestamp) {
 }
 
 /**
- * The fields that put an approved listing live: pin, feed slot, and — for an auction
- * only — the 24-hour clock. A standard or swap listing must not receive `auctionEndsAt`,
- * or the closer will treat it as an auction that has already ended.
+ * The fields that put an approved listing live: visible to every student, pinned
+ * only when the paid package is Priority, and — for an auction only — the 24-hour
+ * clock. A standard or swap listing must not receive `auctionEndsAt`, or the closer
+ * will treat it as an auction that has already ended.
  */
-export function goLiveFields(pkg: ListingPackage, now: Timestamp, kind: ListingKindName = "Auction") {
+export function goLiveFields(pkg: unknown, now: Timestamp, kind: ListingKindName = "Auction") {
+  const normalized = normalizeListingPackage(pkg);
   const live = {
     status: LISTING_STATUS.active,
     publishedAt: now,
-    isPinned: pkg === "Priority",
-    ...visibilityFor(pkg, now.toMillis()),
+    isPinned: normalized === "Priority",
+    ...visibilityFor(now.toMillis()),
   };
   if (kind !== LISTING_KIND.auction) return { ...live, auctionEndsAt: null };
   return {
@@ -99,11 +103,7 @@ export const approveListing = onCall({ region: REGION }, async (request) => {
   const outcome = await db.runTransaction(async (tx) => {
     const { ref, listing } = await readPendingListing(tx, listingId);
     const now = Timestamp.now();
-    const live = goLiveFields(
-      (listing.paidPackage as ListingPackage | undefined) ?? "Free",
-      now,
-      listingKind(listing)
-    );
+    const live = goLiveFields(listing.paidPackage, now, listingKind(listing));
 
     tx.update(ref, { ...live, approvedAt: now, approvedBy: adminUid });
     return { ownerUid: listing.ownerUid as string, isVisible: live.isVisible };

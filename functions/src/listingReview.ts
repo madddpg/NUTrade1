@@ -6,9 +6,9 @@ import {
   AUCTION_DURATION_HOURS,
   LISTING_KIND,
   LISTING_STATUS,
-  ListingPackage,
   REGION,
   listingKind,
+  normalizeListingPackage,
 } from "./constants";
 import { paymongoSecretKey } from "./createQrPayment";
 import { goLiveFields } from "./listingApproval";
@@ -54,15 +54,12 @@ export const onListingUpdated = onDocumentUpdated(
 );
 
 async function onApproved(ref: DocumentReference, listingId: string, listing: DocumentData) {
-  let isVisible = listing.isVisible === true;
-
-  // The app's approveListing always sets visibleFrom; the panel's own approveListing
-  // doesn't, and without it publishScheduledListings can never put the listing on the feed.
-  if (listing.visibleFrom == null) {
-    const pkg = (listing.paidPackage as ListingPackage | undefined) ?? "Free";
+  // The app's approveListing already sets the feed fields. The panel's own
+  // approveListing doesn't, and without them the listing never reaches the feed.
+  if (listing.visibleFrom == null || listing.isVisible !== true) {
     const approvedAt = (listing.approvedAt as Timestamp | undefined) ?? Timestamp.now();
     const kind = listingKind(listing);
-    const live = goLiveFields(pkg, approvedAt, kind);
+    const live = goLiveFields(listing.paidPackage, approvedAt, kind);
 
     // The panel's own countdown is kept where it wrote one — the seller may already
     // have seen it — and the feed slot counts from the panel's approval, not from now.
@@ -72,22 +69,22 @@ async function onApproved(ref: DocumentReference, listingId: string, listing: Do
     await ref.update({
       isPinned: live.isPinned,
       isVisible: live.isVisible,
-      visibleFrom: live.visibleFrom,
+      visibleFrom: asTimestamp(listing.visibleFrom) ?? live.visibleFrom,
       publishedAt: asTimestamp(listing.publishedAt) ?? approvedAt,
       auctionEndsAt: kind === LISTING_KIND.auction
         ? asTimestamp(listing.auctionEndsAt) ??
           Timestamp.fromMillis(approvedAt.toMillis() + AUCTION_DURATION_HOURS * 3_600_000)
         : null,
     });
-    isVisible = live.isVisible;
-    logger.info("onListingUpdated: completed a web-panel approval", { listingId, pkg });
+    logger.info("onListingUpdated: completed a web-panel approval", {
+      listingId,
+      pkg: normalizeListingPackage(listing.paidPackage),
+    });
   }
 
   await notifyUser(listing.ownerUid as string, {
     title: "Your listing was approved",
-    body: isVisible
-      ? "Your listing is now live on the campus feed."
-      : "Your listing joins the campus feed at the next hourly refresh.",
+    body: "Your listing is now live on the campus feed.",
     data: { listingId, type: "listing_approved" },
   });
 }

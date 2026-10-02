@@ -186,20 +186,20 @@ export const MAX_LISTING_PHOTOS = 4;
 
 // ---- Feed visibility --------------------------------------------------------
 /**
- * "New regular listings join after the hourly refresh. Priority listings appear
- * immediately." Free and Additional listings are published with `isVisible: false`
- * and a `visibleFrom` set to the next top of the hour; publishScheduledListings
- * flips them. Priority skips the queue, which is most of what the fee buys.
+ * Approval puts every listing on the feed at once (`isVisible: true`). The
+ * Priority fee buys the pin at the top, and nothing else: Free and Additional
+ * are visible and unpinned.
  *
- * The feed filters on `isVisible == true` rather than on a `visibleFrom <= now`
- * inequality on purpose: Firestore would force that inequality to be the first
- * orderBy, which would break the pinned-first ordering.
+ * The app stores `"Free" | "Additional" | "Priority"`. The web panel's labels
+ * `"Priority Pin"` and `"Standard Post"` are the same two paid packages. Any
+ * other string is Free, so a pin cannot be granted by a stray label.
  */
-export function nextHourlyRefresh(fromMillis: number): number {
-  const next = new Date(fromMillis);
-  next.setUTCMinutes(0, 0, 0);
-  next.setUTCHours(next.getUTCHours() + 1);
-  return next.getTime();
+export function normalizeListingPackage(value: unknown): ListingPackage {
+  if (typeof value !== "string") return "Free";
+  const raw = value.trim().toLowerCase().replace(/[\s_-]+/g, "");
+  if (raw === "priority" || raw === "prioritypin") return "Priority";
+  if (raw === "additional" || raw === "standard" || raw === "standardpost") return "Additional";
+  return "Free";
 }
 
 /** A no-show report waiting on an admin. Only an admin can forfeit a deposit. */

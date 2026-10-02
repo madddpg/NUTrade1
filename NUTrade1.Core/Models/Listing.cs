@@ -111,13 +111,12 @@ public sealed class Listing : INotifyPropertyChanged
     public long? ReservePriceCentavos { get; set; }
 
     /// <summary>
-    /// False while a regular listing waits for the next hourly refresh to join the
-    /// feed. Priority listings are published visible straight away — that is what the
-    /// fee buys. Set server-side at publish time; the client cannot write it.
+    /// True once an admin has approved the listing. Set server-side; the client
+    /// cannot write it. Priority does not change this — it only pins the listing.
     /// </summary>
     public bool IsVisible { get; set; }
 
-    /// <summary>The hourly slot this listing joins the feed at.</summary>
+    /// <summary>When the listing was put on the feed. Older regular posts stored the next hour here while they waited.</summary>
     public DateTimeOffset? VisibleFrom { get; set; }
 
     /// <summary>Current highest bid, in centavos. Equal to <see cref="StartingBidCentavos"/> until the first bid.</summary>
@@ -202,7 +201,7 @@ public sealed class Listing : INotifyPropertyChanged
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ShowRefreshCountdown)));
     }
 
-    /// <summary><c>MM:SS</c> / <c>HH:MM:SS</c> until the next hourly refresh, or <c>00:00</c> when that slot has arrived and the listing is still hidden.</summary>
+    /// <summary><c>MM:SS</c> / <c>HH:MM:SS</c> while an older listing is still hidden, or empty once it is on the feed.</summary>
     private string RefreshClock(DateTimeOffset now)
     {
         if (IsVisible || VisibleFrom is not { } from) return string.Empty;

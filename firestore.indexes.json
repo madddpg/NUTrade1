@@ -171,7 +171,7 @@
       ]
     },
     {
-      "_comment": "publishScheduledListings: listings whose hourly slot has arrived.",
+      "_comment": "publishScheduledListings: active listings still hidden from an older approval. New approvals are visible immediately, so this query only clears that backlog.",
       "collectionGroup": "listings",
       "queryScope": "COLLECTION",
       "fields": [

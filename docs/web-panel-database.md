@@ -131,9 +131,10 @@ await httpsCallable(functions, "resolveDispute")({ disputeId, resolution: "forfe
 await httpsCallable(functions, "setUserVerification")({ uid, verified: false, reason });
 ```
 
-`approveListing` starts the 24-hour auction at approval, not at payment. Priority
-(`paidPackage == "Priority"`) is pinned and visible immediately. Free and Additional
-stay `isVisible: false` until the next hourly refresh (`visibleFrom`). The seller is
+`approveListing` starts the 24-hour auction at approval, not at payment, and puts
+the listing on the student feed immediately (`isVisible: true`). Only Priority
+(`paidPackage == "Priority"`, or the panel label `"Priority Pin"`) is pinned.
+Free, Additional, and `"Standard Post"` are visible and unpinned. The seller is
 notified by `onListingUpdated`; the panel does not write a notification document.
 
 `rejectListing` is terminal. `reason` is shown to the seller, trimmed to 300

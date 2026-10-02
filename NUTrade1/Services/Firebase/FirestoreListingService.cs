@@ -40,8 +40,7 @@ public sealed class FirestoreListingService : IListingService
         var filters = new List<Dictionary<string, object?>>
         {
             Q.Equal("status", Fs.Str(WireCodec.ToWire(ListingStatus.Active))),
-            // Regular listings sit out of the feed until publishScheduledListings
-            // releases them on the hour; Priority is published already visible.
+            // Approval sets this. Priority is ordered first via isPinned, not by hiding the rest.
             Q.Equal("isVisible", Fs.Bool(true)),
         };
         if (category is { } c)

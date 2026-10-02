@@ -69,8 +69,8 @@ service cloud.firestore {
         && request.resource.data.highestBidderUid == null
         && request.resource.data.winningBidId == null
         && request.resource.data.publishedAt == null
-        // Feed visibility is decided at publish time by visibilityFor(), not by the
-        // client — it is the whole substance of the Priority fee.
+        // Feed visibility and the Priority pin are set by approveListing, not by the
+        // client. Priority is the only package that is pinned.
         && request.resource.data.isVisible == false
         // Auction needs a starting bid and an increment. Standard is a price with no
         // increment. Swap stores zeros. Older listings have no kind and stay auctions.

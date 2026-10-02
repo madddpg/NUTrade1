@@ -10,7 +10,7 @@ export { closeExpiredAuctions } from "./closeExpiredAuctions";
 export { approveListing, rejectListing } from "./listingApproval";
 export { onListingUpdated } from "./listingReview";
 
-// Feed visibility — regular listings join on the hour, Priority jumps the queue.
+// Feed visibility — approval shows the listing; only Priority is pinned.
 export { publishScheduledListings } from "./listingVisibility";
 
 // Buyer pays the winning bid, by QR Ph through PayMongo.
