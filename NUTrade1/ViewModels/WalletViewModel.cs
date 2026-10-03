@@ -12,12 +12,14 @@ namespace NUTrade1.ViewModels;
 public partial class WalletViewModel : BaseViewModel
 {
     private readonly IWalletService _wallet;
+    private readonly IDepositService _deposits;
     private readonly INavigationService _nav;
     private bool _loaded;
 
-    public WalletViewModel(IWalletService wallet, INavigationService nav)
+    public WalletViewModel(IWalletService wallet, IDepositService deposits, INavigationService nav)
     {
         _wallet = wallet;
+        _deposits = deposits;
         _nav = nav;
         Title = "Bid credit";
     }
@@ -28,7 +30,15 @@ public partial class WalletViewModel : BaseViewModel
 
     public ObservableRangeCollection<LedgerEntry> Ledger { get; } = new();
 
+    /// <summary>Deposits still in escrow, including the bond on an auction this student won.</summary>
+    public ObservableRangeCollection<BidDeposit> Held { get; } = new();
+
     public bool HasLedger => Ledger.Count > 0;
+
+    public bool HasHeld => Held.Count > 0;
+
+    /// <summary>No spendable lines and nothing held.</summary>
+    public bool ShowEmpty => !HasLedger && !HasHeld;
 
     public string BalanceDisplay => Money.ToDisplay(BalanceCentavos);
 
@@ -55,10 +65,22 @@ public partial class WalletViewModel : BaseViewModel
         {
             var walletTask = _wallet.GetWalletAsync();
             var ledgerTask = _wallet.GetLedgerAsync();
+            var depositsTask = _deposits.GetMyDepositsAsync();
 
             BalanceCentavos = (await walletTask).BalanceCentavos;
             Ledger.ReplaceAll(await ledgerTask);
+            try
+            {
+                Held.ReplaceAll((await depositsTask).Where(deposit => deposit.IsCommitted));
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                // The balance is already on screen. A failed deposit read must not hide it.
+                Held.Clear();
+            }
             OnPropertyChanged(nameof(HasLedger));
+            OnPropertyChanged(nameof(HasHeld));
+            OnPropertyChanged(nameof(ShowEmpty));
             _loaded = true;
         }
         catch (Exception ex) when (ex is not OperationCanceledException)

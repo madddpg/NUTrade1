@@ -51,27 +51,39 @@
                     <BindableLayout.ItemTemplate>
                         <DataTemplate x:DataType="vm:MyBidViewModel">
                             <Border Style="{StaticResource Card}" Padding="0">
-                                <Border.GestureRecognizers>
-                                    <TapGestureRecognizer
-                                        Command="{Binding Source={x:Reference Page}, Path=BindingContext.OpenListingCommand}"
-                                        CommandParameter="{Binding .}" />
-                                </Border.GestureRecognizers>
                                 <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12" Padding="14">
                                     <Border Grid.Column="0" HeightRequest="52" WidthRequest="52" StrokeThickness="0"
                                             StrokeShape="RoundRectangle 14" BackgroundColor="{StaticResource NuNavyLight}">
+                                        <Border.GestureRecognizers>
+                                            <TapGestureRecognizer
+                                                Command="{Binding Source={x:Reference Page}, Path=BindingContext.OpenListingCommand}"
+                                                CommandParameter="{Binding .}" />
+                                        </Border.GestureRecognizers>
                                         <Grid>
                                             <Path Style="{StaticResource IconImage}" HeightRequest="20" WidthRequest="20" Opacity="0.55"
                                                   HorizontalOptions="Center" VerticalOptions="Center"
                                                   Fill="{StaticResource NuNavy}" />
-                                            <Image Aspect="AspectFill" Source="{Binding CoverPhoto}" />
+                                            <Image Aspect="AspectFill" Source="{Binding CoverPhoto}" InputTransparent="True" />
                                         </Grid>
                                     </Border>
                                     <VerticalStackLayout Grid.Column="1" Spacing="3" VerticalOptions="Center">
-                                        <Label Style="{StaticResource CardTitle}" MaxLines="1" LineBreakMode="TailTruncation" Text="{Binding Title}" />
-                                        <Label Style="{StaticResource MetaText}"
-                                               Text="{Binding YourBidDisplay, StringFormat='Your bid: {0}'}" />
-                                        <Label Style="{StaticResource MetaText}" FontSize="11"
-                                               Text="{Binding CreatedAt, Converter={StaticResource TimeAgo}}" />
+                                        <VerticalStackLayout Spacing="3">
+                                            <VerticalStackLayout.GestureRecognizers>
+                                                <TapGestureRecognizer
+                                                    Command="{Binding Source={x:Reference Page}, Path=BindingContext.OpenListingCommand}"
+                                                    CommandParameter="{Binding .}" />
+                                            </VerticalStackLayout.GestureRecognizers>
+                                            <Label Style="{StaticResource CardTitle}" MaxLines="1" LineBreakMode="TailTruncation" Text="{Binding Title}" />
+                                            <Label Style="{StaticResource MetaText}"
+                                                   Text="{Binding YourBidDisplay, StringFormat='Your bid: {0}'}" />
+                                            <Label Style="{StaticResource MetaText}" FontSize="11"
+                                                   Text="{Binding CreatedAt, Converter={StaticResource TimeAgo}}" />
+                                        </VerticalStackLayout>
+                                        <Button Text="Message seller" Style="{StaticResource GhostButton}"
+                                                FontSize="12" Padding="12,0" HeightRequest="32" HorizontalOptions="Start"
+                                                IsVisible="{Binding CanMessageSeller}"
+                                                Command="{Binding Source={x:Reference Page}, Path=BindingContext.MessageSellerCommand}"
+                                                CommandParameter="{Binding .}" />
                                     </VerticalStackLayout>
                                     <Border Grid.Column="2" VerticalOptions="Center" StrokeThickness="0" StrokeShape="RoundRectangle 999" Padding="10,4"
                                             BackgroundColor="{AppThemeBinding Light={StaticResource GoldSoft}, Dark={StaticResource GoldSoftDark}}">

@@ -203,6 +203,10 @@
                         <Label Text="{Binding Listing.Description}" FontFamily="InterRegular" FontSize="13.5" LineHeight="1.35"
                                TextColor="#3F4A5E" IsVisible="{Binding Listing.Description, Converter={StaticResource HasValue}}" />
 
+                        <Button Text="Message the seller" Style="{StaticResource NavyButton}"
+                                IsVisible="{Binding ShowMessageSeller}"
+                                Command="{Binding MessageSellerCommand}" />
+
                         <!-- Place a bid -->
                         <!-- Never drawn for the seller, and not until the listing has loaded — before
                              that, whose listing it is isn't known yet. -->

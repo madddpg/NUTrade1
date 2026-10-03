@@ -28,7 +28,6 @@
                                 <Border Style="{StaticResource Bone}" HeightRequest="10" WidthRequest="120" />
                                 <Border Style="{StaticResource Bone}" HeightRequest="34" WidthRequest="150" />
                                 <Border Style="{StaticResource Bone}" HeightRequest="10" HorizontalOptions="Fill" />
-                                <Border Style="{StaticResource BoneRound}" HeightRequest="46" HorizontalOptions="Fill" Margin="0,8,0,0" />
                             </VerticalStackLayout>
                         </Border>
 
@@ -79,6 +78,31 @@
                         </VerticalStackLayout>
                     </Border>
 
+                    <!-- Held bonds. Winning does not spend these; they join the balance after the meetup. -->
+                    <Label Text="Held" FontFamily="InterBold" FontSize="15" TextColor="{StaticResource Ink}"
+                           IsVisible="{Binding HasHeld}" />
+                    <VerticalStackLayout Spacing="9" BindableLayout.ItemsSource="{Binding Held}"
+                                         IsVisible="{Binding HasHeld}">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="core:BidDeposit">
+                                <Border Style="{StaticResource Card}" Padding="14">
+                                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                                        <VerticalStackLayout Grid.Column="0" Spacing="2">
+                                            <Label Text="{Binding ListingTitle}" FontFamily="InterSemiBold" FontSize="14"
+                                                   TextColor="{StaticResource Ink}"
+                                                   IsVisible="{Binding ListingTitle, Converter={StaticResource HasValue}}" />
+                                            <Label Text="Held until you and the seller both confirm the meetup. Then it joins the balance above."
+                                                   Style="{StaticResource MetaText}" />
+                                            <Label Text="It can't be cashed out." Style="{StaticResource MetaText}" />
+                                        </VerticalStackLayout>
+                                        <Label Grid.Column="1" Text="{Binding DepositDisplay}" FontFamily="InterBold" FontSize="15"
+                                               VerticalOptions="Center" TextColor="{StaticResource Ink}" />
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
+
                     <!-- Ledger -->
                     <Label Text="Activity" FontFamily="InterBold" FontSize="15" TextColor="{StaticResource Ink}"
                            IsVisible="{Binding HasLedger}" />
@@ -111,9 +135,9 @@
                         </BindableLayout.ItemTemplate>
                     </VerticalStackLayout>
 
-                    <Label Text="Nothing here yet. Bid credit shows up when a deposit comes back, or when a no-show bond is awarded to you."
+                    <Label Text="Nothing here yet. Bid credit shows up when a deposit comes back, or when a no-show bond is awarded to you. There is no cash-out."
                            Style="{StaticResource MetaText}" HorizontalTextAlignment="Center" Margin="0,20,0,0"
-                           IsVisible="{Binding HasLedger, Converter={StaticResource InvertBool}}" />
+                           IsVisible="{Binding ShowEmpty}" />
 
                 </VerticalStackLayout>
                 </Grid>

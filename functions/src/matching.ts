@@ -34,14 +34,19 @@ export function awardListing(
   now: Timestamp
 ): { chatId: string } {
   const bid = bidSnap.data()!;
+  const sellerUid =
+    (typeof listing.ownerUid === "string" && listing.ownerUid) ||
+    (typeof listing.sellerUid === "string" && listing.sellerUid) ||
+    "";
+  const buyerUid = typeof bid.bidderUid === "string" ? bid.bidderUid : "";
   const chatRef = db.collection("chats").doc();
 
   tx.set(chatRef, {
     listingId: listingRef.id,
     listingTitle: listing.title ?? "",
-    sellerUid: listing.ownerUid,
-    buyerUid: bid.bidderUid,
-    participantUids: [listing.ownerUid, bid.bidderUid],
+    sellerUid,
+    buyerUid,
+    participantUids: [sellerUid, buyerUid].filter((uid) => uid.length > 0),
     winningBidCentavos: bid.amountCentavos,
     winningBidId: bidSnap.id,
     lastMessage: "Auction won — arrange your meetup here.",

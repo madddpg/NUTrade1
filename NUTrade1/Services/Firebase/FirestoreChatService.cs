@@ -33,14 +33,19 @@ public sealed class FirestoreChatService : IChatService
     {
         if (_auth.CurrentUid is not { } uid) return Array.Empty<Chat>();
 
+        // Sorted here rather than with orderBy. array-contains plus orderBy needs a
+        // composite index; without it the whole Messages tab fails and a winner has
+        // no way into the room. A single-field array index is enough for this filter.
         var query = Q.Build(
             Q.From("chats"),
             Q.ArrayContains("participantUids", Fs.Str(uid)),
-            new[] { Q.OrderBy("lastMessageAt", descending: true) },
             limit: 50);
 
         var documents = await _firestore.RunQueryAsync(string.Empty, query, ct);
-        return documents.Select(Map).ToArray();
+        return documents
+            .Select(Map)
+            .OrderByDescending(chat => chat.LastMessageAt ?? DateTimeOffset.MinValue)
+            .ToArray();
     }
 
     public async Task<Chat?> GetChatAsync(string chatId, CancellationToken ct = default)

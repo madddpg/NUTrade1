@@ -30,4 +30,8 @@ public sealed class MyBidViewModel
         BidStatus.Withdrawn => "Withdrawn",
         _ => "Pending",
     };
+
+    /// <summary>Winning opens a chat. The bid stores the room id awardListing wrote.</summary>
+    public bool CanMessageSeller =>
+        Bid.Status == BidStatus.Approved && !string.IsNullOrEmpty(Bid.ChatId);
 }

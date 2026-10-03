@@ -50,12 +50,23 @@ public partial class ListingDetailViewModel : BaseViewModel
 
     public bool IsOwnListing => BidEligibility.IsSeller(Listing, _auth.CurrentUid);
 
+    /// <summary>The chat <c>awardListing</c> opened when this student's bid won.</summary>
+    public string? WinningChatId => BidHistory
+        .FirstOrDefault(bid =>
+            bid.BidderUid == _auth.CurrentUid
+            && bid.Status == BidStatus.Approved
+            && !string.IsNullOrEmpty(bid.ChatId))
+        ?.ChatId;
+
+    public bool ShowMessageSeller => !string.IsNullOrEmpty(WinningChatId);
+
     /// <summary>
-    /// The bid form is for buyers of an auction only. It stays hidden until the listing
-    /// has loaded, so a seller never sees it flash up on their own item while the page
-    /// is fetching, and a set price or a swap never offers a bid.
+    /// The bid form is for buyers of an auction that is still running. It stays hidden
+    /// until the listing has loaded, so a seller never sees it flash up on their own
+    /// item, and a winner is offered the chat instead of another bid.
     /// </summary>
-    public bool ShowBidForm => Listing is { IsAuction: true } && !IsOwnListing;
+    public bool ShowBidForm =>
+        Listing is { IsAuction: true, Status: ListingStatus.Active } && !IsOwnListing && !ShowMessageSeller;
 
     /// <summary>The note that replaces the bid form on a set price or a swap.</summary>
     public bool ShowBuyerNote => Listing is { IsAuction: false } && !IsOwnListing;
@@ -94,6 +105,9 @@ public partial class ListingDetailViewModel : BaseViewModel
             BidHistory.Clear();
             foreach (var bid in bids)
                 BidHistory.Add(bid);
+            OnPropertyChanged(nameof(WinningChatId));
+            OnPropertyChanged(nameof(ShowMessageSeller));
+            OnPropertyChanged(nameof(ShowBidForm));
 
             StartCountdownTimer();
         }
@@ -204,6 +218,12 @@ public partial class ListingDetailViewModel : BaseViewModel
         }
     }
 
+    [RelayCommand]
+    private Task MessageSellerAsync() =>
+        string.IsNullOrEmpty(WinningChatId)
+            ? Task.CompletedTask
+            : _nav.GoToAsync(Routes.ChatRoom, new Dictionary<string, object> { ["chatId"] = WinningChatId });
+
     /// <summary>Opens the full-screen viewer at the photo that was tapped.</summary>
     [RelayCommand]
     private Task OpenPhotoAsync(int index)
@@ -221,6 +241,7 @@ public partial class ListingDetailViewModel : BaseViewModel
     {
         OnPropertyChanged(nameof(IsOwnListing));
         OnPropertyChanged(nameof(ShowBidForm));
+        OnPropertyChanged(nameof(ShowMessageSeller));
         OnPropertyChanged(nameof(ShowBuyerNote));
         OnPropertyChanged(nameof(CurrentBidDisplay));
         OnPropertyChanged(nameof(MinNextBidDisplay));

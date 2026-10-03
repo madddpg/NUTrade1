@@ -79,14 +79,19 @@ public sealed class FunctionsDepositService : IDepositService
     {
         if (_auth.CurrentUid is not { } uid) return [];
 
+        // Equality only. Ordering in the query needs a composite index; sorting here
+        // still shows the newest deposits when that index was never deployed.
         var query = Q.Build(
             Q.From("bidIntents"),
             Q.Equal("bidderUid", Fs.Str(uid)),
-            [Q.OrderBy("createdAt", descending: true)],
-            limit: limit);
+            limit: Math.Max(limit, 50));
 
         var documents = await _firestore.RunQueryAsync(string.Empty, query, ct);
-        return documents.Select(d => Map(d, Fs.IdFromName(d))).ToArray();
+        return documents
+            .Select(d => Map(d, Fs.IdFromName(d)))
+            .OrderByDescending(deposit => deposit.CreatedAt ?? DateTimeOffset.MinValue)
+            .Take(limit)
+            .ToArray();
     }
 
     private static BidDeposit Map(JsonElement document, string id)

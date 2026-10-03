@@ -66,4 +66,10 @@ public partial class OffersViewModel : BaseViewModel
         item is null
             ? Task.CompletedTask
             : _nav.GoToAsync(Routes.ListingDetail, new Dictionary<string, object> { ["listingId"] = item.Listing.Id });
+
+    [RelayCommand]
+    private Task MessageSellerAsync(MyBidViewModel? item) =>
+        item is not { CanMessageSeller: true }
+            ? Task.CompletedTask
+            : _nav.GoToAsync(Routes.ChatRoom, new Dictionary<string, object> { ["chatId"] = item.Bid.ChatId! });
 }

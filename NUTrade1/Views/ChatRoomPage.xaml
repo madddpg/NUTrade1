@@ -73,12 +73,14 @@
                 StrokeThickness="1" Padding="16,12,16,18">
             <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
                 <Border Grid.Column="0" Style="{StaticResource InputShell}">
-                    <Entry Style="{StaticResource ShellEntry}" Text="{Binding Draft}" Placeholder="Message"
-                           ReturnCommand="{Binding SendCommand}" />
+                    <Entry Style="{StaticResource ShellEntry}" Text="{Binding Draft}" Placeholder="Message the seller"
+                           ReturnType="Send" ReturnCommand="{Binding SendCommand}" />
                 </Border>
                 <Border Grid.Column="1" Background="{StaticResource GoldBrush}" StrokeThickness="0" StrokeShape="RoundRectangle 999"
                         HeightRequest="46" WidthRequest="46" VerticalOptions="Center">
-                    <Path Style="{StaticResource IconChevronRight}" HeightRequest="20" WidthRequest="20" Fill="{StaticResource NuNavy}" />
+                    <!-- The icon must not eat the tap, or Send never runs. -->
+                    <Path Style="{StaticResource IconChevronRight}" HeightRequest="20" WidthRequest="20"
+                          Fill="{StaticResource NuNavy}" InputTransparent="True" />
                     <Border.GestureRecognizers>
                         <TapGestureRecognizer Command="{Binding SendCommand}" />
                     </Border.GestureRecognizers>
